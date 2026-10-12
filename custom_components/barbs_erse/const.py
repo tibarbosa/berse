@@ -4,7 +4,7 @@ from datetime import timedelta
 
 DOMAIN = "barbs_erse"
 NAME = "barbs-erse"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 MANUFACTURER = "barbs-erse"
 
 CONF_ENERGY_ENTITY = "energy_entity"

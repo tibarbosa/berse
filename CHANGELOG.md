@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- Fix Home Assistant setup form number selector validation.
+- Fix ERSE catalog ZIP content negotiation.
+
 ## 0.1.0
 
 - Introduce the `barbs_erse` Home Assistant integration domain and English setup flow.
