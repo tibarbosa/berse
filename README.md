@@ -98,3 +98,5 @@ node --check custom_components/barbs_erse/frontend/barbs-erse-offers.js
 ```
 
 The HACS release uses the default-branch directory distribution (`zip_release: false`). No frontend dependency or separate frontend repository is required.
+
+To publish a version, follow [docs/RELEASING.md](docs/RELEASING.md).

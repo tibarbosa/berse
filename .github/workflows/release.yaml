@@ -1,0 +1,133 @@
+name: Publish release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version from the manifest and changelog, without the v prefix
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  check_branch:
+    name: Check default branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the default branch
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]]; then
+            echo "Run this workflow from the default branch ($DEFAULT_BRANCH)." >&2
+            exit 1
+          fi
+
+  validate:
+    needs: check_branch
+    uses: ./.github/workflows/validate.yaml
+    permissions:
+      contents: read
+
+  publish:
+    name: Create GitHub release
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Validate release metadata
+        id: release
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import tomllib
+          from pathlib import Path
+
+          version = os.environ["RELEASE_VERSION"].strip()
+          if not re.fullmatch(r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)", version):
+              raise SystemExit("Version must be plain SemVer, for example 0.1.2")
+
+          manifest_version = json.loads(
+              Path("custom_components/barbs_erse/manifest.json").read_text()
+          )["version"]
+          project_version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+          constants = Path("custom_components/barbs_erse/const.py").read_text()
+          const_match = re.search(r'^VERSION = "([^"]+)"$', constants, re.MULTILINE)
+          if const_match is None:
+              raise SystemExit("Could not read the integration version from const.py")
+
+          versions = {
+              "manifest.json": manifest_version,
+              "pyproject.toml": project_version,
+              "const.py": const_match.group(1),
+          }
+          mismatches = [f"{file}: {found}" for file, found in versions.items() if found != version]
+          if mismatches:
+              raise SystemExit(
+                  f"Requested {version}, but release metadata does not match: "
+                  + ", ".join(mismatches)
+              )
+
+          changelog = Path("CHANGELOG.md").read_text()
+          sections = list(re.finditer(r"(?m)^##\s+([^\r\n]+)\s*$", changelog))
+          notes = None
+          for index, section in enumerate(sections):
+              if section.group(1).strip() == version:
+                  end = sections[index + 1].start() if index + 1 < len(sections) else len(changelog)
+                  notes = changelog[section.end():end].strip()
+                  break
+          if not notes:
+              raise SystemExit(f"CHANGELOG.md has no release notes section for {version}")
+
+          tag = f"v{version}"
+          import subprocess
+
+          existing_tag = subprocess.run(
+              ["git", "ls-remote", "--exit-code", "--tags", "origin", f"refs/tags/{tag}"],
+              capture_output=True,
+              text=True,
+              check=False,
+          )
+          if existing_tag.returncode == 0:
+              raise SystemExit(f"Tag {tag} already exists on origin")
+          if existing_tag.returncode != 2:
+              raise SystemExit(existing_tag.stderr or "Could not check remote tags")
+
+          notes_path = Path(os.environ["RUNNER_TEMP"]) / "release-notes.md"
+          notes_path.write_text(notes + "\n")
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
+              output.write(f"tag={tag}\n")
+              output.write(f"notes_path={notes_path}\n")
+          PY
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_NOTES: ${{ steps.release.outputs.notes_path }}
+        run: >-
+          gh release create "$RELEASE_TAG"
+          --repo "$GITHUB_REPOSITORY"
+          --target "$GITHUB_SHA"
+          --title "$RELEASE_TAG"
+          --notes-file "$RELEASE_NOTES"
+
+      - name: Add release link to summary
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          release_url=$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json url --jq .url)
+          echo "Published [$RELEASE_TAG]($release_url)." >> "$GITHUB_STEP_SUMMARY"
