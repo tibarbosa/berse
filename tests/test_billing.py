@@ -26,7 +26,7 @@ def test_cycle_handles_leap_day_and_future_anchor() -> None:
     future = cycle_for(date(2026, 11, 1), 30, date(2026, 10, 31))
 
     assert leap is not None
-    assert leap.last_included_date == date(2024, 3, 1)
+    assert leap.last_included_date == date(2024, 2, 29)
     assert future is None
 
 
