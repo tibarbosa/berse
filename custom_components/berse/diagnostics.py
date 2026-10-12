@@ -25,7 +25,7 @@ async def async_get_config_entry_diagnostics(
             for key, value in entry.data.items()
             if key != "energy_entity"
         },
-        "options": dict(entry.options),
+        "options": {key: value for key, value in entry.options.items() if key != "energy_entity"},
         "catalog": {
             "source_url": catalog.source_url if catalog else None,
             "content_hash": catalog.content_hash if catalog else None,

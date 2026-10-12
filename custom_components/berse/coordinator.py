@@ -19,12 +19,15 @@ from .const import (
     CONF_ALLOW_CONDITIONAL,
     CONF_BILLING_DAYS,
     CONF_BILLING_START,
+    CONF_CONSUMPTION_MODE,
     CONF_ENERGY_ENTITY,
     CONF_ENERGY_PRICE,
     CONF_INCLUDE_INDEXED,
+    CONF_MANUAL_KWH,
     CONF_MARKET,
     CONF_POWER,
     CONF_STANDING_CHARGE,
+    CONSUMPTION_MANUAL,
     DOMAIN,
     MARKET_ALL,
     MAX_OFFERS,
@@ -80,8 +83,7 @@ class CatalogService:
             now = dt_util.now()
             loop = asyncio.get_running_loop()
             parser_upgrade = (
-                self.catalog is not None
-                and self.catalog.parser_version != PARSER_VERSION
+                self.catalog is not None and self.catalog.parser_version != PARSER_VERSION
             )
             if (
                 not parser_upgrade
@@ -99,9 +101,8 @@ class CatalogService:
             if not force and not parser_upgrade and self.last_successful_update:
                 try:
                     previous_success = datetime.fromisoformat(self.last_successful_update)
-                    if (
-                        dt_util.as_local(now) - dt_util.as_local(previous_success)
-                        < timedelta(hours=20)
+                    if dt_util.as_local(now) - dt_util.as_local(previous_success) < timedelta(
+                        hours=20
                     ):
                         return None
                 except ValueError:
@@ -215,7 +216,10 @@ class OfferCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         anchor = date.fromisoformat(str(config[CONF_BILLING_START])[:10])
         duration_days = int(config[CONF_BILLING_DAYS])
+        manual = config.get(CONF_CONSUMPTION_MODE) == CONSUMPTION_MANUAL
         cycle = cycle_for(anchor, duration_days, today)
+        if manual and cycle is None:
+            cycle = cycle_for(today, duration_days, today)
         offer_list = [
             offer for offer in catalog.offers if self._offer_is_eligible(offer, config, today)
         ]
@@ -227,9 +231,7 @@ class OfferCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         prior_eligibility_fingerprint = self.entry_storage.data.get("eligibility_fingerprint")
         eligibility_changed = prior_eligibility_fingerprint != eligibility_fingerprint
         new_count = (
-            0
-            if eligibility_changed
-            else int(self.entry_storage.data.get("new_offer_count", 0))
+            0 if eligibility_changed else int(self.entry_storage.data.get("new_offer_count", 0))
         )
         ignored_new_ids = (
             set(self.catalog_service.new_identity_ids)
@@ -274,8 +276,10 @@ class OfferCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return result
 
         start_local = self._local_midnight(cycle.start)
-        current_window = await async_read_energy(
-            self.hass, config[CONF_ENERGY_ENTITY], start_local, now
+        current_window = (
+            EnergyWindow(Decimal("0"), None, None, None, False, source="manual")
+            if manual
+            else await async_read_energy(self.hass, config[CONF_ENERGY_ENTITY], start_local, now)
         )
         current_cost: Decimal | None = None
         cutoff_local: datetime | None = None
@@ -283,9 +287,7 @@ class OfferCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         current_cost_note = None
         if current_window.coverage_complete:
             cutoff_local = (
-                dt_util.as_local(current_window.cutoff)
-                if current_window.cutoff
-                else None
+                dt_util.as_local(current_window.cutoff) if current_window.cutoff else None
             )
             if cutoff_local:
                 current_days = completed_standing_charge_days(cycle.start, cutoff_local.date())
@@ -303,13 +305,21 @@ class OfferCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     )
         else:
             current_cost_note = (
-                "Complete consumption history is not available for this billing cycle."
+                "Manual estimate: measured energy and current cost are unavailable."
+                if manual
+                else "Complete consumption history is not available for this billing cycle."
             )
 
         reference_window: EnergyWindow | None = None
         reference_days = 0
         reference_label = ""
-        if cycle.index > 0:
+        if manual:
+            reference_window = EnergyWindow(
+                _decimal(config[CONF_MANUAL_KWH]), None, None, None, True, source="manual"
+            )
+            reference_days = duration_days
+            reference_label = "Manual consumption"
+        elif cycle.index > 0:
             previous_start = self._local_midnight(cycle.start - timedelta(days=duration_days))
             previous_end = start_local
             previous_window = await async_read_energy(
@@ -332,7 +342,9 @@ class OfferCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             reference_kwh: Decimal | None = None
         else:
             ranking_status = "ready"
-            summary = f"{reference_label}: {reference_window.kwh} kWh over {reference_days} days."
+            summary = (
+                f"{reference_label}: {reference_window.kwh:.2f} kWh over {reference_days} days."
+            )
             reference_kwh = reference_window.kwh
             ranked = rank_offers(
                 offer_list,
@@ -443,6 +455,7 @@ class OfferCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     ) -> Decimal | None:
         """Accrue measured energy using the price effective at each interval."""
         records = list(self.entry_storage.data.get("price_history", []))
+
         def _effective_moment(record: dict[str, Any]) -> datetime:
             try:
                 moment = datetime.fromisoformat(record["effective_at"])
@@ -558,6 +571,8 @@ class OfferCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _fingerprint(config: dict[str, Any]) -> str:
         keys = (
             CONF_ENERGY_ENTITY,
+            CONF_CONSUMPTION_MODE,
+            CONF_MANUAL_KWH,
             CONF_POWER,
             CONF_BILLING_START,
             CONF_BILLING_DAYS,

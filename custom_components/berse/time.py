@@ -9,7 +9,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_UPDATE_TIME, DEFAULT_UPDATE_TIME, DOMAIN
 from .coordinator import OfferCoordinator
-from .entity import BarbsErseEntity, async_update_entry_data
+from .entity import BerseEntity, async_update_entry_data
 
 
 async def async_setup_entry(
@@ -19,7 +19,7 @@ async def async_setup_entry(
     async_add_entities([UpdateTime(coordinator, entry)])
 
 
-class UpdateTime(BarbsErseEntity, TimeEntity):
+class UpdateTime(BerseEntity, TimeEntity):
     _attr_translation_key = "update_time"
     _attr_icon = "mdi:clock-outline"
 

@@ -1,17 +1,23 @@
 type: markdown
-title: barbs-erse · Best offers
-content: >-
-  {% set entity = 'sensor.barbs_erse_best_offers' %}
+title: berse · Best offers
+content: |-
+  {% set entity = 'sensor.berse_best_offers' %}
   {% set offers = state_attr(entity, 'offers') or [] %}
-  **{{ state_attr(entity, 'power_kva') or '—' }} kVA · Single rate · Excluding VAT**
+  **{{ states(entity) }} offers · Excluding VAT**
 
-  {% for offer in offers[:10] %}
-  - **{{ offer.supplier_name | e }}**: {{ offer.standing_charge }} €/day / {{ offer.energy_price }} €/kWh
-    <details><summary>{{ offer.offer_name | e }}</summary>
-    Combined cost: {{ offer.candidate_cost }} EUR · Saving: {{ offer.savings }} EUR
-    </details>
+  {% set kwh = state_attr(entity, 'reference_kwh') %}
+  {% if kwh is not none %}
+  {{ state_attr(entity, 'reference_label') }}: {{ '%.2f' | format(kwh | float) }} kWh over {{ state_attr(entity, 'reference_days') }} days
+  {% else %}
+  {{ state_attr(entity, 'summary') or 'Waiting for consumption data.' }}
+  {% endif %}
+
+  {% for offer in offers[:5] %}
+  **{{ loop.index }}. {{ offer.supplier_name | e }} — {{ offer.offer_name | e }}**
+
+  Estimated cost: {{ '%.2f' | format(offer.candidate_cost | float) }} EUR · Saving: {{ '%.2f' | format(offer.savings | float) }} EUR
+
+  Energy: {{ '%.2f' | format(offer.energy_price | float) }} EUR/kWh · Standing: {{ '%.2f' | format(offer.standing_charge | float) }} EUR/day
+
   {% endfor %}
-
-  Last update: {{ state_attr(entity, 'last_successful_update') or 'Not yet successful' }}
-  
-  New offers: {{ state_attr(entity, 'new_offer_count') or 0 }}
+  Last update: {{ state_attr(entity, 'last_successful_update') or 'Not yet updated' }}

@@ -1,0 +1,107 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "berse",
+        "description": "Configure one mainland Portugal electricity installation. Choose a cumulative sensor or enter manual kWh for the full billing period. The sensor is optional in manual mode; manual kWh is ignored in sensor mode. All prices exclude VAT.",
+        "data": {
+          "energy_entity": "Imported energy sensor",
+          "power_kva": "Contracted power",
+          "energy_price": "Energy price (EUR/kWh, excluding VAT)",
+          "standing_charge": "Standing charge (EUR/day, excluding VAT)",
+          "billing_start": "Billing start date",
+          "billing_days": "Billing period length in days",
+          "update_time": "Daily offer refresh time",
+          "consumption_mode": "Consumption source",
+          "manual_kwh": "Manual consumption per billing period (kWh)"
+        }
+      }
+    },
+    "error": {
+      "invalid_energy_sensor": "Choose an available cumulative energy sensor in kWh.",
+      "invalid_manual_consumption": "Enter a finite consumption above zero and no greater than 1,000,000 kWh.",
+      "invalid_consumption_mode": "Choose a supported consumption source."
+    },
+    "abort": {
+      "already_configured": "This energy sensor is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Consumption, offers and notifications",
+        "description": "Manual kWh applies to the full configured billing period and does not require a sensor. Manual kWh is ignored in sensor mode. Indexed offers are estimates. All prices exclude VAT.",
+        "data": {
+          "market": "Market selection",
+          "include_indexed": "Include indexed estimates in rankings",
+          "allow_conditional": "Include offers with conditional eligibility (only when extra costs are confirmed as zero)",
+          "notify_indexed": "Allow savings notifications for indexed estimates",
+          "min_saving_eur": "Minimum saving in EUR",
+          "min_saving_percent": "Minimum saving percentage",
+          "initial_summary": "Send an initial savings summary",
+          "consumption_mode": "Consumption source",
+          "manual_kwh": "Manual consumption per billing period (kWh)",
+          "energy_entity": "Imported energy sensor"
+        }
+      }
+    },
+    "error": {
+      "invalid_energy_sensor": "Choose an available cumulative energy sensor in kWh.",
+      "invalid_manual_consumption": "Enter a finite consumption above zero and no greater than 1,000,000 kWh.",
+      "invalid_consumption_mode": "Choose a supported consumption source."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "energy_used": {
+        "name": "Energy used"
+      },
+      "current_cost": {
+        "name": "Current cost"
+      },
+      "best_offers": {
+        "name": "Best offers"
+      },
+      "potential_savings": {
+        "name": "Potential savings"
+      },
+      "last_update": {
+        "name": "Last update"
+      },
+      "new_offers": {
+        "name": "New offers"
+      }
+    },
+    "number": {
+      "energy_price": {
+        "name": "Energy price"
+      },
+      "standing_charge": {
+        "name": "Standing charge"
+      },
+      "billing_days": {
+        "name": "Billing days"
+      }
+    },
+    "select": {
+      "contracted_power": {
+        "name": "Contracted power"
+      }
+    },
+    "date": {
+      "billing_start": {
+        "name": "Billing start"
+      }
+    },
+    "time": {
+      "update_time": {
+        "name": "Update time"
+      }
+    },
+    "button": {
+      "refresh_offers": {
+        "name": "Refresh offers"
+      }
+    }
+  }
+}

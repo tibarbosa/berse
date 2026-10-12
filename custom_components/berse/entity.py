@@ -1,4 +1,4 @@
-"""Shared entity metadata for barbs-erse."""
+"""Shared entity metadata for berse."""
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -9,7 +9,7 @@ from .const import DOMAIN, MANUFACTURER, NAME
 from .coordinator import OfferCoordinator
 
 
-class BarbsErseEntity(CoordinatorEntity[OfferCoordinator]):
+class BerseEntity(CoordinatorEntity[OfferCoordinator]):
     """Base class for device-bound entities."""
 
     _attr_has_entity_name = True

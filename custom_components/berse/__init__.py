@@ -1,4 +1,4 @@
-"""barbs-erse Home Assistant integration."""
+"""berse Home Assistant integration."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from .coordinator import CatalogService, OfferCoordinator
 from .storage import EntryStorage
 
 _LOGGER = logging.getLogger(__name__)
-CARD_URL = f"/barbs_erse/barbs-erse-offers.js?v={VERSION}"
+CARD_URL = f"/berse/berse-offers.js?v={VERSION}"
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
@@ -40,9 +40,9 @@ async def _async_register_frontend(hass: HomeAssistant) -> None:
     """Serve the card and register its resource for storage dashboards."""
     domain_data = hass.data[DOMAIN]
     if not domain_data.get("frontend_registered"):
-        js_path = Path(__file__).parent / "frontend" / "barbs-erse-offers.js"
+        js_path = Path(__file__).parent / "frontend" / "berse-offers.js"
         await hass.http.async_register_static_paths(
-            [StaticPathConfig("/barbs_erse/barbs-erse-offers.js", str(js_path), False)]
+            [StaticPathConfig("/berse/berse-offers.js", str(js_path), False)]
         )
         domain_data["frontend_registered"] = True
 
@@ -64,7 +64,7 @@ async def _async_register_frontend(hass: HomeAssistant) -> None:
             (
                 item
                 for item in items
-                if item.get("url", "").split("?", 1)[0] == "/barbs_erse/barbs-erse-offers.js"
+                if item.get("url", "").split("?", 1)[0] == "/berse/berse-offers.js"
             ),
             None,
         )
@@ -76,7 +76,7 @@ async def _async_register_frontend(hass: HomeAssistant) -> None:
         else:
             await resources.async_create_item({"url": CARD_URL, "res_type": "module"})
     except Exception:  # Lovelace resource storage differs on older supported versions.
-        _LOGGER.exception("Could not register the barbs-erse dashboard card resource")
+        _LOGGER.exception("Could not register the berse dashboard card resource")
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

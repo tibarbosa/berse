@@ -1,11 +1,16 @@
-"""Constants for barbs-erse."""
+"""Constants for berse."""
 
 from datetime import timedelta
 
-DOMAIN = "barbs_erse"
-NAME = "barbs-erse"
-VERSION = "0.1.2"
-MANUFACTURER = "barbs-erse"
+DOMAIN = "berse"
+NAME = "berse"
+VERSION = "0.2.0"
+MANUFACTURER = "berse"
+
+CONF_CONSUMPTION_MODE = "consumption_mode"
+CONF_MANUAL_KWH = "manual_kwh"
+CONSUMPTION_SENSOR = "sensor"
+CONSUMPTION_MANUAL = "manual"
 
 CONF_ENERGY_ENTITY = "energy_entity"
 CONF_POWER = "power_kva"
@@ -26,7 +31,7 @@ DEFAULT_UPDATE_TIME = "03:15:00"
 DEFAULT_BILLING_DAYS = 30
 DEFAULT_POWER = "4.6"
 UPDATE_INTERVAL = timedelta(minutes=5)
-MAX_OFFERS = 10
+MAX_OFFERS = 5
 
 PLATFORMS = ["sensor", "number", "select", "date", "time", "button"]
 
@@ -34,10 +39,10 @@ MARKET_ALL = "all"
 MARKET_REGULATED = "regulated"
 MARKET_FREE = "free"
 
-EVENT_CHEAPER_OFFER = "barbs_erse_cheaper_offer"
+EVENT_CHEAPER_OFFER = "berse_cheaper_offer"
 
 SOURCE_SETTINGS_URL = "https://simuladorprecos.erse.pt/config/Settings.json"
-SOURCE_USER_AGENT = f"barbs-erse/{VERSION} (Home Assistant custom integration)"
+SOURCE_USER_AGENT = f"berse/{VERSION} (Home Assistant custom integration)"
 
 POWER_OPTIONS = (
     "1.15",

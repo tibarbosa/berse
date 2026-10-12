@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>berse card preview</title>
+<style>
+  body { font-family:system-ui,sans-serif; background:#f1f5f7; color:#172b35; margin:0; padding:24px; }
+  main { max-width:1160px; margin:auto; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,350px),1fr)); gap:24px; }
+  ha-card { display:block; background:#fff; border-radius:18px; box-shadow:0 4px 24px #102b3510; }
+  h1 { font-size:26px; } main>p { color:#586b76; } h2 { font-size:18px; }
+  @media(prefers-color-scheme:dark) {
+    body { background:#111a22; color:#eef3f7; --primary-text-color:#eef3f7; --secondary-text-color:#aabcc8; --secondary-background-color:#263541; --divider-color:#33434e; --success-color:#56c6a1; --error-color:#ff8383; }
+    ha-card { background:#1b2730; } main>p { color:#aabcc8; }
+  }
+</style>
+<main>
+<h1>berse · Card preview</h1>
+<p>Fictional demonstration data. Actual offers come from ERSE in Home Assistant.</p>
+<div class="cards"><section><h2>Mixed savings</h2><berse-offers id="mixed"></berse-offers></section><section><h2>No cheaper offers</h2><berse-offers id="higher"></berse-offers></section></div>
+</main>
+<script src="../custom_components/berse/frontend/berse-offers.js"></script>
+<script>
+const offers = [
+  ['Supplier A','Simple energy',48],['Supplier B','Home plan',54],
+  ['Supplier C','Standard plan',60],['Supplier D','Electricity plus',66],
+  ['Supplier E','Flexible plan',72],
+].map(([supplier_name,offer_name,candidate_cost],i) => ({
+  supplier_name,offer_name,candidate_cost,offer_id:`DEMO-${i+1}`,
+  standing_charge:0.4,energy_price:(candidate_cost-12)/300,
+  valid_from:'2026-10-01',valid_until:'2026-10-31',market:'free',indexed:false,
+}));
+for (const [id,current_cost] of [['mixed',60],['higher',42]]) {
+ const card=document.getElementById(id);
+ card.setConfig({entity:'sensor.demo_best_offers'});
+ card.hass={config:{time_zone:'Europe/Lisbon'},states:{'sensor.demo_best_offers':{
+  state:'5',attributes:{ranking_status:'ready',status:'ready',reference_kwh:300,
+   reference_days:30,reference_consumption_source:'manual',power_kva:4.6,
+   last_successful_update:'2026-10-12T12:00:00Z',offers:offers.map(o=>({...o,current_cost,savings:current_cost-o.candidate_cost})),
+  },
+ }}};
+}
+</script>
+</html>

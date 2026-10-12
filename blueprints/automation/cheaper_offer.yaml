@@ -1,6 +1,6 @@
 blueprint:
-  name: barbs-erse cheaper offer
-  description: Run a notification action when barbs-erse finds lower comparable costs.
+  name: berse cheaper offer
+  description: Run a notification action when berse finds lower comparable costs.
   domain: automation
   input:
     notification_action:
@@ -11,7 +11,7 @@ blueprint:
 
 trigger:
   - platform: event
-    event_type: barbs_erse_cheaper_offer
+    event_type: berse_cheaper_offer
 
 condition: []
 

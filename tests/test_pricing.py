@@ -3,8 +3,8 @@
 from datetime import date
 from decimal import Decimal
 
-from custom_components.barbs_erse.models import Offer
-from custom_components.barbs_erse.pricing import base_cost, rank_offers
+from custom_components.berse.models import Offer
+from custom_components.berse.pricing import base_cost, rank_offers
 
 
 def offer(

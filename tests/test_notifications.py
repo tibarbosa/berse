@@ -2,7 +2,7 @@
 
 from decimal import Decimal
 
-from custom_components.barbs_erse.notifications import _meets_thresholds
+from custom_components.berse.notifications import _meets_thresholds
 
 
 def test_notification_thresholds_require_both_when_configured() -> None:

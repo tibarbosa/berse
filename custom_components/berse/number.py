@@ -13,7 +13,7 @@ from .const import (
     DOMAIN,
 )
 from .coordinator import OfferCoordinator
-from .entity import BarbsErseEntity, async_update_entry_data
+from .entity import BerseEntity, async_update_entry_data
 
 
 async def async_setup_entry(
@@ -29,7 +29,7 @@ async def async_setup_entry(
     )
 
 
-class PriceNumber(BarbsErseEntity, NumberEntity):
+class PriceNumber(BerseEntity, NumberEntity):
     _attr_mode = NumberMode.BOX
     _attr_native_min_value = 0
     _attr_native_max_value = 10
@@ -59,7 +59,7 @@ class PriceNumber(BarbsErseEntity, NumberEntity):
         )
 
 
-class BillingDaysNumber(BarbsErseEntity, NumberEntity):
+class BillingDaysNumber(BerseEntity, NumberEntity):
     _attr_translation_key = "billing_days"
     _attr_icon = "mdi:calendar-range"
     _attr_mode = NumberMode.BOX

@@ -7,7 +7,7 @@ from io import BytesIO, StringIO
 
 import pytest
 
-from custom_components.barbs_erse.parser import CatalogParseError, parse_catalog
+from custom_components.berse.parser import CatalogParseError, parse_catalog
 
 CONDITION_FIELDS = [
     "COM", "COD_Proposta", "NomeProposta", "Fornecimento", "Segmento", "TipoContagem",

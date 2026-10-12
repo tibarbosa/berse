@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0
+
+- Rename the integration and domain to berse; use a fresh setup.
+- Show the five cheapest eligible offers, including offers without savings.
+- Add manual consumption per billing period without an energy sensor.
+- Add a cost-bar dashboard card with two-decimal values and a current-contract reference.
+- Package the supplied berse logo and document the HACS search icon limitation.
+
 ## 0.1.2
 
 - Treat blank ERSE service costs as zero when the source explicitly says no additional services are required.
@@ -12,7 +20,7 @@
 
 ## 0.1.0
 
-- Introduce the `barbs_erse` Home Assistant integration domain and English setup flow.
+- Introduce the `berse` Home Assistant integration domain and English setup flow.
 - Add fixed-length billing cycles, single-rate offer parsing, comparison sensors, and persistent update snapshots.
 - Add a dashboard offers card, a savings event, and an automation blueprint.
 - Package local PNG branding and HACS metadata.

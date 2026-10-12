@@ -7,7 +7,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_POWER, DOMAIN, POWER_OPTIONS
 from .coordinator import OfferCoordinator
-from .entity import BarbsErseEntity, async_update_entry_data
+from .entity import BerseEntity, async_update_entry_data
 
 POWER_LABELS = [f"{option} kVA" for option in POWER_OPTIONS]
 
@@ -19,7 +19,7 @@ async def async_setup_entry(
     async_add_entities([ContractedPowerSelect(coordinator, entry)])
 
 
-class ContractedPowerSelect(BarbsErseEntity, SelectEntity):
+class ContractedPowerSelect(BerseEntity, SelectEntity):
     _attr_translation_key = "contracted_power"
     _attr_icon = "mdi:flash"
     _attr_options = POWER_LABELS

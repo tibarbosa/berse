@@ -1,2 +1,2 @@
-type: custom:barbs-erse-offers
-entity: sensor.barbs_erse_best_offers
+type: custom:berse-offers
+entity: sensor.berse_best_offers

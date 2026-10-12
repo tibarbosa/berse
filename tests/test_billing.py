@@ -4,7 +4,7 @@ from datetime import date
 
 import pytest
 
-from custom_components.barbs_erse.billing import cycle_for
+from custom_components.berse.billing import cycle_for
 
 
 def test_cycles_are_fixed_length_across_months() -> None:

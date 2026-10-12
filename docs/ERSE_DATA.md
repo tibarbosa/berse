@@ -111,7 +111,7 @@ Assuming EUR/day and EUR/kWh excluding VAT, 300 kWh and 30 days produce:
 Displayed base cost: EUR 58.83
 ```
 
-This verifies the join and arithmetic, not the complete commercial/fiscal interpretation. Before release, reconcile representative source values with official offer documents and simulator results. No VAT is added by barbs-erse.
+This verifies the join and arithmetic, not the complete commercial/fiscal interpretation. Before release, reconcile representative source values with official offer documents and simulator results. No VAT is added by berse.
 
 The official [ERSE electricity simulator](https://simuladorprecos.erse.pt/eletricidade/) labels contract inputs as EUR/kWh for energy and EUR/day for contracted power, and instructs consumers to enter those prices without VAT. That confirms the simulator's user-input units and VAT basis. It does not, by itself, prove that every `TF`/`TV|TVFV|TVP` CSV value is a direct one-to-one match for those inputs or that all included charges are represented. The example above remains a parser/arithmetic check until it is reconciled against a current official offer document and simulator result.
 
@@ -139,6 +139,6 @@ The current runtime exposes unit prices without rounding them before multiplicat
 
 ## Notification event
 
-`barbs_erse_cheaper_offer` groups candidates in one event. Event data includes `reference_kwh`, `reference_days`, `price_basis: excluding VAT`, and a `candidates` list. Each candidate includes source identity, supplier/offer names, contracted power, unit prices, comparable base costs, savings, indexation status and terms URL. The included automation blueprint accepts a user-selected notification action. Position changes alone do not change identity; the baseline and prior unit prices are stored between restarts.
+`berse_cheaper_offer` groups candidates in one event. Event data includes `reference_kwh`, `reference_days`, `price_basis: excluding VAT`, and a `candidates` list. Each candidate includes source identity, supplier/offer names, contracted power, unit prices, comparable base costs, savings, indexation status and terms URL. The included automation blueprint accepts a user-selected notification action. Position changes alone do not change identity; the baseline and prior unit prices are stored between restarts.
 
 The integration's authored documentation and labels are English. Exact source headers and original official commercial names remain unchanged because translating them would break parsing or misidentify offers.

@@ -7,7 +7,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .coordinator import OfferCoordinator
-from .entity import BarbsErseEntity
+from .entity import BerseEntity
 
 
 async def async_setup_entry(
@@ -17,7 +17,7 @@ async def async_setup_entry(
     async_add_entities([RefreshOffersButton(coordinator, entry)])
 
 
-class RefreshOffersButton(BarbsErseEntity, ButtonEntity):
+class RefreshOffersButton(BerseEntity, ButtonEntity):
     _attr_translation_key = "refresh_offers"
     _attr_icon = "mdi:refresh"
 

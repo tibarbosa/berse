@@ -12,7 +12,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .coordinator import OfferCoordinator
-from .entity import BarbsErseEntity
+from .entity import BerseEntity
 
 
 async def async_setup_entry(
@@ -31,7 +31,7 @@ async def async_setup_entry(
     )
 
 
-class EnergyUsedSensor(BarbsErseEntity, SensorEntity):
+class EnergyUsedSensor(BerseEntity, SensorEntity):
     _attr_translation_key = "energy_used"
     _attr_icon = "mdi:lightning-bolt"
     _attr_native_unit_of_measurement = "kWh"
@@ -54,7 +54,7 @@ class EnergyUsedSensor(BarbsErseEntity, SensorEntity):
         }
 
 
-class CurrentCostSensor(BarbsErseEntity, SensorEntity):
+class CurrentCostSensor(BerseEntity, SensorEntity):
     _attr_translation_key = "current_cost"
     _attr_icon = "mdi:cash"
     _attr_native_unit_of_measurement = "EUR"
@@ -77,7 +77,7 @@ class CurrentCostSensor(BarbsErseEntity, SensorEntity):
         }
 
 
-class BestOffersSensor(BarbsErseEntity, SensorEntity):
+class BestOffersSensor(BerseEntity, SensorEntity):
     _attr_translation_key = "best_offers"
     _attr_icon = "mdi:format-list-numbered"
 
@@ -102,6 +102,7 @@ class BestOffersSensor(BarbsErseEntity, SensorEntity):
             "reference_kwh": data.get("reference_kwh"),
             "reference_days": data.get("reference_days"),
             "reference_label": data.get("reference_label"),
+            "reference_consumption_source": data.get("reference_consumption_source"),
             "power_kva": data.get("power_kva"),
             "status": data.get("status"),
             "ranking_status": data.get("ranking_status", data.get("status")),
@@ -113,7 +114,7 @@ class BestOffersSensor(BarbsErseEntity, SensorEntity):
         }
 
 
-class PotentialSavingsSensor(BarbsErseEntity, SensorEntity):
+class PotentialSavingsSensor(BerseEntity, SensorEntity):
     _attr_translation_key = "potential_savings"
     _attr_icon = "mdi:piggy-bank-outline"
     _attr_native_unit_of_measurement = "EUR"
@@ -135,7 +136,7 @@ class PotentialSavingsSensor(BarbsErseEntity, SensorEntity):
         }
 
 
-class LastUpdateSensor(BarbsErseEntity, SensorEntity):
+class LastUpdateSensor(BerseEntity, SensorEntity):
     _attr_translation_key = "last_update"
     _attr_icon = "mdi:clock-check-outline"
     _attr_device_class = SensorDeviceClass.TIMESTAMP
@@ -153,7 +154,7 @@ class LastUpdateSensor(BarbsErseEntity, SensorEntity):
         return datetime.fromisoformat(value)
 
 
-class NewOffersSensor(BarbsErseEntity, SensorEntity):
+class NewOffersSensor(BerseEntity, SensorEntity):
     _attr_translation_key = "new_offers"
     _attr_icon = "mdi:new-box"
 

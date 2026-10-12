@@ -9,7 +9,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_BILLING_START, DOMAIN
 from .coordinator import OfferCoordinator
-from .entity import BarbsErseEntity, async_update_entry_data
+from .entity import BerseEntity, async_update_entry_data
 
 
 async def async_setup_entry(
@@ -19,7 +19,7 @@ async def async_setup_entry(
     async_add_entities([BillingStartDate(coordinator, entry)])
 
 
-class BillingStartDate(BarbsErseEntity, DateEntity):
+class BillingStartDate(BerseEntity, DateEntity):
     _attr_translation_key = "billing_start"
     _attr_icon = "mdi:calendar-start"
 

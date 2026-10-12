@@ -1,4 +1,4 @@
-"""Config and options flows for barbs-erse."""
+"""Config and options flows for berse."""
 
 from __future__ import annotations
 
@@ -9,15 +9,18 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import selector
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_ALLOW_CONDITIONAL,
     CONF_BILLING_DAYS,
     CONF_BILLING_START,
+    CONF_CONSUMPTION_MODE,
     CONF_ENERGY_ENTITY,
     CONF_ENERGY_PRICE,
     CONF_INCLUDE_INDEXED,
     CONF_INITIAL_SUMMARY,
+    CONF_MANUAL_KWH,
     CONF_MARKET,
     CONF_MIN_SAVING_EUR,
     CONF_MIN_SAVING_PERCENT,
@@ -25,6 +28,8 @@ from .const import (
     CONF_POWER,
     CONF_STANDING_CHARGE,
     CONF_UPDATE_TIME,
+    CONSUMPTION_MANUAL,
+    CONSUMPTION_SENSOR,
     DEFAULT_BILLING_DAYS,
     DEFAULT_POWER,
     DEFAULT_UPDATE_TIME,
@@ -76,6 +81,53 @@ def _power_selector() -> selector.SelectSelector:
     )
 
 
+def _consumption_fields(values: dict[str, Any]) -> dict:
+    entity = vol.Optional(
+        CONF_ENERGY_ENTITY, description={"suggested_value": values.get(CONF_ENERGY_ENTITY)}
+    )
+    return {
+        vol.Required(
+            CONF_CONSUMPTION_MODE, default=values.get(CONF_CONSUMPTION_MODE, CONSUMPTION_SENSOR)
+        ): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=[
+                    {"value": CONSUMPTION_SENSOR, "label": "Cumulative energy sensor"},
+                    {"value": CONSUMPTION_MANUAL, "label": "Manual consumption per billing period"},
+                ],
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        ),
+        entity: _energy_selector(),
+        vol.Required(
+            CONF_MANUAL_KWH, default=values.get(CONF_MANUAL_KWH, 100)
+        ): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=0.01,
+                max=1000000,
+                step=0.01,
+                mode=selector.NumberSelectorMode.BOX,
+                unit_of_measurement="kWh",
+            )
+        ),
+    }
+
+
+def _consumption_errors(hass, values: dict[str, Any]) -> dict[str, str]:
+    if values.get(CONF_CONSUMPTION_MODE) == CONSUMPTION_MANUAL:
+        try:
+            amount = float(values[CONF_MANUAL_KWH])
+            if math.isfinite(amount) and 0 < amount <= 1000000:
+                return {}
+        except (KeyError, TypeError, ValueError):
+            pass
+        return {CONF_MANUAL_KWH: "invalid_manual_consumption"}
+    if values.get(CONF_CONSUMPTION_MODE) != CONSUMPTION_SENSOR:
+        return {CONF_CONSUMPTION_MODE: "invalid_consumption_mode"}
+    if not _validate_energy_sensor(hass, values.get(CONF_ENERGY_ENTITY)):
+        return {CONF_ENERGY_ENTITY: "invalid_energy_sensor"}
+    return {}
+
+
 def _entry_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
     values = defaults or {}
 
@@ -85,23 +137,20 @@ def _entry_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
 
     return vol.Schema(
         {
-            required(CONF_ENERGY_ENTITY): _energy_selector(),
+            **_consumption_fields(values),
             required(CONF_POWER, DEFAULT_POWER): _power_selector(),
             required(CONF_ENERGY_PRICE): _energy_price_selector(),
             required(CONF_STANDING_CHARGE): _standing_selector(),
-            required(CONF_BILLING_START):
-                selector.DateSelector(),
-            required(CONF_BILLING_DAYS, DEFAULT_BILLING_DAYS):
-                selector.NumberSelector(
-                    selector.NumberSelectorConfig(
-                        min=1,
-                        max=366,
-                        step=1,
-                        mode=selector.NumberSelectorMode.BOX,
-                    )
-                ),
-            required(CONF_UPDATE_TIME, DEFAULT_UPDATE_TIME):
-                selector.TimeSelector(),
+            required(CONF_BILLING_START, dt_util.now().date().isoformat()): selector.DateSelector(),
+            required(CONF_BILLING_DAYS, DEFAULT_BILLING_DAYS): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=1,
+                    max=366,
+                    step=1,
+                    mode=selector.NumberSelectorMode.BOX,
+                )
+            ),
+            required(CONF_UPDATE_TIME, DEFAULT_UPDATE_TIME): selector.TimeSelector(),
         }
     )
 
@@ -129,7 +178,7 @@ def _validate_energy_sensor(hass, entity_id: str) -> bool:
     return True
 
 
-class BarbsErseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class BerseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Set up a single imported-energy installation."""
 
     VERSION = 1
@@ -137,43 +186,48 @@ class BarbsErseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
         if user_input is not None:
-            energy_entity = user_input[CONF_ENERGY_ENTITY]
-            if not _validate_energy_sensor(self.hass, energy_entity):
-                errors[CONF_ENERGY_ENTITY] = "invalid_energy_sensor"
-            else:
-                await self.async_set_unique_id(energy_entity)
-                self._abort_if_unique_id_configured()
+            errors = _consumption_errors(self.hass, user_input)
+            if not errors:
+                manual = user_input[CONF_CONSUMPTION_MODE] == CONSUMPTION_MANUAL
+                if manual:
+                    user_input.pop(CONF_ENERGY_ENTITY, None)
+                    friendly_name = "Manual consumption"
+                else:
+                    energy_entity = user_input[CONF_ENERGY_ENTITY]
+                    await self.async_set_unique_id(energy_entity)
+                    self._abort_if_unique_id_configured()
+                    friendly_name = (
+                        self.hass.states.get(energy_entity).attributes.get("friendly_name")
+                        or energy_entity
+                    )
                 existing_entries = self.hass.config_entries.async_entries(DOMAIN)
-                friendly_name = (
-                    self.hass.states.get(energy_entity).attributes.get("friendly_name")
-                    or energy_entity
-                )
                 title = NAME if not existing_entries else f"{NAME} · {friendly_name}"
                 user_input[CONF_POWER] = str(user_input[CONF_POWER])
                 user_input[CONF_BILLING_DAYS] = int(user_input[CONF_BILLING_DAYS])
                 return self.async_create_entry(title=title, data=user_input)
         return self.async_show_form(
-            step_id="user", data_schema=_entry_schema(), errors=errors
+            step_id="user", data_schema=_entry_schema(user_input), errors=errors
         )
 
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: config_entries.ConfigEntry):
-        return BarbsErseOptionsFlow(config_entry)
+        return BerseOptionsFlow()
 
 
-class BarbsErseOptionsFlow(config_entries.OptionsFlow):
+class BerseOptionsFlow(config_entries.OptionsFlow):
     """Advanced market and savings-notification choices."""
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        self.config_entry = config_entry
-
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
+        errors = {}
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
-        options = self.config_entry.options
+            errors = _consumption_errors(self.hass, user_input)
+            if not errors:
+                return self.async_create_entry(title="", data=user_input)
+        options = {**self.config_entry.data, **self.config_entry.options, **(user_input or {})}
         schema = vol.Schema(
             {
+                **_consumption_fields(options),
                 vol.Required(
                     CONF_MARKET, default=options.get(CONF_MARKET, MARKET_ALL)
                 ): selector.SelectSelector(
@@ -198,33 +252,33 @@ class BarbsErseOptionsFlow(config_entries.OptionsFlow):
                     CONF_NOTIFY_INDEXED,
                     default=options.get(CONF_NOTIFY_INDEXED, False),
                 ): selector.BooleanSelector(),
-                vol.Required(CONF_MIN_SAVING_EUR, default=options.get(CONF_MIN_SAVING_EUR, 0.0)):
-                    selector.NumberSelector(
-                        selector.NumberSelectorConfig(
-                            min=0,
-                            max=100000,
-                            step=0.01,
-                            mode=selector.NumberSelectorMode.BOX,
-                            unit_of_measurement="EUR",
-                        )
-                    ),
+                vol.Required(
+                    CONF_MIN_SAVING_EUR, default=options.get(CONF_MIN_SAVING_EUR, 0.0)
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=0,
+                        max=100000,
+                        step=0.01,
+                        mode=selector.NumberSelectorMode.BOX,
+                        unit_of_measurement="EUR",
+                    )
+                ),
                 vol.Required(
                     CONF_MIN_SAVING_PERCENT,
                     default=options.get(CONF_MIN_SAVING_PERCENT, 0.0),
-                ):
-                    selector.NumberSelector(
-                        selector.NumberSelectorConfig(
-                            min=0,
-                            max=100,
-                            step=0.1,
-                            mode=selector.NumberSelectorMode.BOX,
-                            unit_of_measurement="%",
-                        )
-                    ),
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=0,
+                        max=100,
+                        step=0.1,
+                        mode=selector.NumberSelectorMode.BOX,
+                        unit_of_measurement="%",
+                    )
+                ),
                 vol.Required(
                     CONF_INITIAL_SUMMARY,
                     default=options.get(CONF_INITIAL_SUMMARY, False),
                 ): selector.BooleanSelector(),
             }
         )
-        return self.async_show_form(step_id="init", data_schema=schema)
+        return self.async_show_form(step_id="init", data_schema=schema, errors=errors)

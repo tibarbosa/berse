@@ -3,7 +3,7 @@
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
-from custom_components.barbs_erse.consumption import (
+from custom_components.berse.consumption import (
     _build_hourly_statistics_window,
     _cumulative_samples,
     _last_complete_hour,

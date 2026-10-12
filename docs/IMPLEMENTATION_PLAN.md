@@ -1,27 +1,27 @@
-# barbs-erse implementation plan
+# berse implementation plan
 
-Revision: 12 October 2026. Status: implementation draft. This revision supersedes the previous implementation plan. A release is not considered complete until the source, HACS, hassfest, and real Home Assistant acceptance gates below have been verified.
+Revision: 12 October 2026. Status: implemented with documented upstream HACS search-icon limitation. This revision supersedes the previous implementation plan. A release is not considered complete until the source, HACS, hassfest, and real Home Assistant acceptance gates below have been verified.
 
 ## 1. Confirmed scope
 
-- Product and eventual repository name: **barbs-erse**.
-- Home Assistant integration domain and Python directory: **barbs_erse**.
+- Product and eventual repository name: **berse**.
+- Home Assistant integration domain and Python directory: **berse**.
 - Installation through HACS as a custom integration.
 - All authored repository content in English: documentation, filenames, code, comments, tests, UI labels, errors, notifications, examples and release notes.
 - Clear, short entity names and an automatically named device. No profile-name question during setup.
-- One cumulative imported-energy sensor in kWh per configured installation.
+- A cumulative imported-energy sensor or a manually entered kWh assumption per billing period.
 - **Single-rate electricity only.** No time-of-use selector, off-peak controls or two/three-rate prices.
 - **All comparison prices exclude VAT.** No VAT selector or inclusive-VAT mode.
 - One billing anchor date and a positive billing-period length in days. Consecutive fixed-length cycles; no monthly day reset and no editable end date.
 - Daily ERSE ZIP refresh at a configurable local time.
-- A compact dashboard card showing up to ten best offers, daily standing charge, kWh price, last successful refresh and new-offer count.
+- A compact dashboard card showing the five lowest cost eligible offers, daily standing charge, kWh price, last successful refresh and new-offer count.
 - Preserve the original requirement for Home Assistant savings notifications and relevant market/eligibility filters.
 
 Source column names and official supplier/offer names must remain exact for interoperability and identity. Portuguese text received from ERSE is external data, not an authored UI translation. Do not translate an official offer name into an invented name. Document source fields in English while quoting exact CSV keys where necessary.
 
 ## 2. Changes from the existing repository
 
-The inspected checkout is `/home/tiago/repos/ha-erse`, with domain `erse_energy` and origin `git@github.com:tibarbosa/ha-erse.git`. It already contains an initial integration. The implementation must adapt that code rather than assume an empty repository.
+The inspected checkout originated at `git@github.com:tibarbosa/berse.git`. The berse product, Python package and Home Assistant domain use `berse`. The GitHub repository is being renamed to `tibarbosa/berse` as requested.
 
 | Existing behavior | Required behavior | Reason |
 |---|---|---|
@@ -30,34 +30,34 @@ The inspected checkout is `/home/tiago/repos/ha-erse`, with domain `erse_energy`
 | Start/end date controls | Anchor date + consecutive N-day cycles | Match the requested billing model |
 | Single/two/three-rate selector | Single-rate behavior only | Avoid exposing unsupported functionality |
 | VAT basis selector | VAT-exclusive inputs and calculations | One consistent comparison basis |
-| Provisional offer preview | Compact ranked Top 10 with price pairs | Fast dashboard consultation |
+| Provisional offer preview | Compact ranked Top 5 with price pairs | Fast dashboard consultation |
 | Catalog timestamp only | Separate last successful refresh and new-offer count | Show data freshness and actual additions |
-| `erse_energy` domain | `barbs_erse` domain | Match the new product identity |
+| `erse_energy` domain | `berse` domain | Match the new product identity |
 | SVG in root brand folder | Packaged PNG branding in integration directory | Meet current HA/HACS packaging requirements |
 
 Do not silently convert an existing inclusive-VAT profile into exclusive-VAT prices. Require price re-entry when migrating such a profile. An old arbitrary start/end range also requires choosing an anchor and duration; do not guess its intended recurrence.
 
 ## 3. Naming and setup
 
-Use `barbs-erse` as the integration title and default device name. The config-entry title is automatic. For multiple entries, derive a readable suffix from the chosen energy sensor's friendly name; never prompt for a custom name. Use immutable registry/config-entry identifiers for unique IDs, not display names.
+Use `berse` as the integration title and default device name. The config-entry title is automatic. For multiple entries, derive a readable suffix from the chosen energy sensor's friendly name; never prompt for a custom name. Use immutable registry/config-entry identifiers for unique IDs, not display names.
 
 Use Home Assistant entity naming (`has_entity_name=True`) so labels are short on the device page and have a device prefix elsewhere. Users remain free to rename entities through HA.
 
 | Entity label | Proposed default entity ID | Purpose |
 |---|---|---|
-| Energy price | `number.barbs_erse_energy_price` | Current contract EUR/kWh, excluding VAT |
-| Standing charge | `number.barbs_erse_standing_charge` | Current contract EUR/day, excluding VAT |
-| Contracted power | `select.barbs_erse_contracted_power` | kVA, including 4.6 and 5.75 |
-| Billing start | `date.barbs_erse_billing_start` | Anchor date; the only editable date |
-| Billing days | `number.barbs_erse_billing_days` | Positive integer cycle length |
-| Update time | `time.barbs_erse_update_time` | Daily local refresh time |
-| Refresh offers | `button.barbs_erse_refresh_offers` | Manual refresh |
-| Energy used | `sensor.barbs_erse_energy_used` | Imported kWh in the current cycle |
-| Current cost | `sensor.barbs_erse_current_cost` | Cost incurred to the displayed cutoff |
-| Best offers | `sensor.barbs_erse_best_offers` | Number of displayed offers, compact list in attributes |
-| Potential savings | `sensor.barbs_erse_potential_savings` | Savings over the ranking reference period |
-| Last update | `sensor.barbs_erse_last_update` | Last successful catalog refresh timestamp |
-| New offers | `sensor.barbs_erse_new_offers` | Additions compared with the previous successful refresh |
+| Energy price | `number.berse_energy_price` | Current contract EUR/kWh, excluding VAT |
+| Standing charge | `number.berse_standing_charge` | Current contract EUR/day, excluding VAT |
+| Contracted power | `select.berse_contracted_power` | kVA, including 4.6 and 5.75 |
+| Billing start | `date.berse_billing_start` | Anchor date; the only editable date |
+| Billing days | `number.berse_billing_days` | Positive integer cycle length |
+| Update time | `time.berse_update_time` | Daily local refresh time |
+| Refresh offers | `button.berse_refresh_offers` | Manual refresh |
+| Energy used | `sensor.berse_energy_used` | Imported kWh in the current cycle |
+| Current cost | `sensor.berse_current_cost` | Cost incurred to the displayed cutoff |
+| Best offers | `sensor.berse_best_offers` | Number of displayed offers, compact list in attributes |
+| Potential savings | `sensor.berse_potential_savings` | Savings over the ranking reference period |
+| Last update | `sensor.berse_last_update` | Last successful catalog refresh timestamp |
+| New offers | `sensor.berse_new_offers` | Additions compared with the previous successful refresh |
 
 Entity IDs are defaults, not hardcoded references: HA may suffix them or users may rename them. The dashboard editor must use an entity selector and derive its companion data from the selected Best offers entity.
 
@@ -129,7 +129,7 @@ savings = current_contract_base_cost - candidate_base_cost
 
 Use Decimal arithmetic. Display the full published precision needed for unit prices, rather than rounding prices to cents before multiplying.
 
-Rank by combined cost for the same contracted power and consumption reference, not by energy price alone. Display the concise price pair requested while retaining ranking inputs and total costs in details. Return up to ten eligible offers, without padding. Multiple offers from one supplier are permitted; details identify each offer. A later optional supplier-deduplication filter must not silently change “ten offers” into “ten suppliers.”
+Rank by combined cost for the same contracted power and consumption reference, not by energy price alone. Display the concise price pair requested while retaining ranking inputs and total costs in details. Return up to five eligible offers, without padding. Multiple offers from one supplier are permitted; details identify each offer. A later optional supplier-deduplication filter must not silently change “five offers” into “five suppliers.”
 
 This scope is energy + standing charge, excluding VAT and other taxes. To keep savings meaningful, default to offers without unresolved mandatory services or conditional costs. Where known mandatory charges apply, either calculate them explicitly on both sides or exclude the offer from savings claims. Do not subtract discounts already included in published prices. Treat non-cash promotions separately.
 
@@ -139,11 +139,11 @@ Keep filters for regulated/free market, indexed/non-indexed and commercial eligi
 
 Maintain a persistent set of single-rate offer-variant identities from each successful refresh. A “new offer” is an identity present now and absent from the immediately preceding successful snapshot.
 
-For each device, count additions at its selected power, then apply that device's eligibility filters. The count covers all eligible additions, **not just additions entering the Top 10**. Store each addition's identity so the count can be audited.
+For each device, count additions at its selected power, then apply that device's eligibility filters. The count covers all eligible additions, **not just additions entering the Top 5**. Store each addition's identity so the count can be audited.
 
 - First successful download: establish baseline, `new_offers=0`.
 - Same identity with a changed price: not new; potentially a savings event.
-- Reordered Top 10: not new.
+- Reordered Top 5: not new.
 - Removed offer: not new.
 - Reappearance after absence in the previous snapshot: new again, per the requested comparison rule.
 - Successful unchanged response, including a validated HTTP 304: advance last-success time and set new count to zero.
@@ -157,22 +157,22 @@ Distinguish “Last update” (successful fetch/validation) from “Catalog vers
 
 ## 8. Dashboard experience
 
-Deliver a dedicated **barbs-erse Offers** card with a visual editor and a native Markdown fallback. Register the card with Home Assistant's card picker and load its resource through a supported, tested mechanism packaged with the integration. All frontend runtime assets stay inside `custom_components/barbs_erse/`; no separate HACS frontend repository or external card dependency is required.
+Deliver a dedicated **berse Offers** card with a visual editor and a native Markdown fallback. Register the card with Home Assistant's card picker and load its resource through a supported, tested mechanism packaged with the integration. All frontend runtime assets stay inside `custom_components/berse/`; no separate HACS frontend repository or external card dependency is required.
 
-User flow: **Edit dashboard → Add card → barbs-erse Offers → select Best offers entity → Save**. Editing an existing dashboard remains a deliberate user action. Do not inject cards into dashboards automatically.
+User flow: **Edit dashboard → Add card → berse Offers → select Best offers entity → Save**. Editing an existing dashboard remains a deliberate user action. Do not inject cards into dashboards automatically.
 
 The custom card must expose a stub configuration and visual editor, handle renamed entities, and render supplier-provided text safely as text rather than raw HTML. If auto resource registration is unavailable for a YAML-managed dashboard, provide the exact resource path and a manual fallback in the English README. Verify registration, unloading, cache-busting and updates in a real HA frontend before calling this flow complete.
 
 Illustrative layout; the companies and prices below are fictional:
 
 ```text
-barbs-erse · Best offers
+berse · Best offers
 4.6 kVA · Single rate · Excluding VAT
 
 Company A: €0.3500/day / €0.1600/kWh
 Company B: €0.4200/day / €0.1580/kWh
 Company C: €0.3000/day / €0.1750/kWh
-... up to 10 eligible offers
+... up to 5 eligible offers
 
 Last update: 12 Oct 2026, 03:15
 New offers: 3
@@ -183,11 +183,11 @@ Ranking: 300 kWh over 30 days
 
 For this example, costs are A €58.50, B €60.00 and C €61.50. A ranks first even though B has a lower kWh price. Unit prices are the main content; total cost, offer identity, savings and conditions are available in details. The card displays update time in HA's local timezone. Also handle loading, no matching offers, insufficient consumption and stale data without hiding the last successful timestamp.
 
-The Best offers sensor contains a maximum of ten compact records plus `last_successful_update`, `new_offer_count`, reference consumption/days, power, status and summary metadata. This makes the card self-contained and avoids guessing related entity IDs. The full catalog must not be copied into entity attributes or Recorder history.
+The Best offers sensor contains a maximum of five compact records plus `last_successful_update`, `new_offer_count`, reference consumption/days, power, status and summary metadata. This makes the card self-contained and avoids guessing related entity IDs. The full catalog must not be copied into entity attributes or Recorder history.
 
 ## 9. Savings notifications
 
-Emit `barbs_erse_cheaper_offer` for newly eligible or materially improved offers whose comparable cost is lower than the current contract. Provide an English blueprint with a user-selected notification action, supporting mobile and persistent notifications.
+Emit `berse_cheaper_offer` for newly eligible or materially improved offers whose comparable cost is lower than the current contract. Provide an English blueprint with a user-selected notification action, supporting mobile and persistent notifications.
 
 Persist deduplication across restarts; changes in position alone do not notify. Group multiple candidates into one message. Separate notification policy from the New offers counter: a price reduction can trigger a savings alert without increasing new-offer count.
 
@@ -195,15 +195,15 @@ Default threshold: any positive saving; configurable minimum EUR and percentage.
 
 ## 10. Branding and HACS-ready repository
 
-Generate an original, simple electricity/comparison icon, not an ERSE official logo. Supply transparent PNG assets readable on light and dark backgrounds, with a maintained vector source if useful. Proposed assets: square 256×256 `icon.png` and 512×512 `icon@2x.png`, plus dark variants if contrast requires them.
+Use the user-supplied berse logo. Package its PNG assets in the integration directory and verify that Home Assistant displays the icon after installation. HACS search icons for custom integrations depend on HACS's upstream brand catalog; document that limitation without implying the local package can control search results.
 
-Package them at `custom_components/barbs_erse/brand/`. An SVG alone in a root-level folder does not satisfy the delivery. Inspect actual PNG rendering and check current HACS/HA validation requirements during implementation. Local branding is supported by HA 2026.3+; set the actual minimum HA version to the version proven by testing, not merely the branding minimum.
+Package them at `custom_components/berse/brand/`. An SVG alone in a root-level folder does not satisfy the delivery. Inspect actual PNG rendering and check current HACS/HA validation requirements during implementation. Local branding is supported by HA 2026.3+; set the actual minimum HA version to the version proven by testing, not merely the branding minimum.
 
 Target tree:
 
 ```text
-barbs-erse/
-  custom_components/barbs_erse/
+berse/
+  custom_components/berse/
     __init__.py
     manifest.json
     const.py
@@ -227,7 +227,7 @@ barbs-erse/
     pricing.py
     notifications.py
     storage.py
-    frontend/barbs-erse-offers.js
+    frontend/berse-offers.js
     brand/icon.png
     brand/icon@2x.png
   docs/IMPLEMENTATION_PLAN.md
@@ -251,26 +251,18 @@ Release requirements:
 - Exactly one integration domain in `custom_components`.
 - Real version, `config_flow`, Recorder dependency, appropriate integration/iot type, codeowner, documentation and issue URLs in the manifest.
 - `hacs.json` with actual minimum supported HA version and valid metadata.
-- English installation, setup, billing, card, notification, troubleshooting and migration documentation.
+- Concise English installation, setup, and dashboard-card documentation; keep notification and source details in focused supporting docs.
 - Actual runnable card, notification event producer and blueprint; no example advertising an unimplemented capability.
-- Existing license preserved unless intentionally changed.
+- Use the user-selected MIT license.
 - Lint, unit/integration tests, frontend checks, HACS validation and hassfest in CI.
 - Release artifacts matching HACS download behavior; if using the default-branch directory distribution, document it and avoid an unnecessary custom ZIP process.
 - No placeholder URLs or pending translations in the release deliverable.
 
-The current GitHub URL is known; a future URL such as `tibarbosa/barbs-erse` is not yet verified. Renaming the local/product domain does not rename GitHub. During implementation, either retain the existing remote URL with the new product name or explicitly rename/create the repository and update real links. Do not claim push-readiness with nonexistent issue/documentation URLs. Publishing or pushing is a separate action from preparing the files.
+The user requested the GitHub repository be renamed to `tibarbosa/berse`. Confirm the existing repository identity and target-name availability before renaming, then update the local `origin` and all public links. Do not claim HACS search branding works until HACS provides an upstream brand-catalog path for this custom integration.
 
-## 11. Migration approach
+## 11. Fresh installation
 
-Changing an HA integration domain is not a normal options migration. Preserve the existing implementation while preparing the replacement and document a controlled transition:
-
-1. Export or record current prices, energy entity and refresh preferences.
-2. Remove/disable the old integration entry before activating the replacement to avoid duplicate scheduled updates and notifications.
-3. Install the new `barbs_erse` component and add it with the simplified flow.
-4. Re-enter VAT-exclusive prices, billing anchor and duration.
-5. Update dashboard/automation entity references; remove obsolete old entities and component files after confirming operation.
-
-An automatic migration may be implemented only if it is validated against HA's registries and domain constraints. Do not promise preservation of old entity IDs across a domain rename. For new installations, no migration steps are necessary.
+The user does not require backward compatibility. berse 0.2.0 is configured as a fresh integration in the test instance. No previous entries, entity IDs or settings are migrated.
 
 ## 12. Implementation phases and acceptance criteria
 
@@ -281,7 +273,7 @@ An automatic migration may be implemented only if it is validated against HA's r
 | 3 | Single-rate catalog, snapshots and delta | Only single-rate electrical variants; first/repeated/failed/restarted updates produce correct new counts |
 | 4 | Comparable costs, filters and savings | Common power/reference period, VAT-exclusive costs; official sample validation; no false conditional savings |
 | 5 | Card, entities and notifications | Addable from card picker; price pairs, update time and additions visible; notifications deduplicated |
-| 6 | PNG branding and release package | Fresh install and upgrade via HACS; frontend icon visible; CI passes; actual repository links valid |
+| 6 | PNG branding and release package | Fresh install via HACS; installed HA icon visible; HACS search icon limitation documented; CI passes; renamed repository links valid |
 
 Specific tests: price-vs-standing-charge ranking tradeoffs; duplicate/gas rows; expired/missing-condition offers; empty prices; no eligible offers; catalog unchanged/304; new ID versus changed price; baseline after configuration changes; refresh races; offline cache; energy-meter resets; hourly cutoff; anchor in future; duration validation; cycle boundaries across short months and DST; card renamed-entity behavior; integration reload and restart; blueprint event delivery.
 

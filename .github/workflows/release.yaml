@@ -57,13 +57,13 @@ jobs:
 
           version = os.environ["RELEASE_VERSION"].strip()
           if not re.fullmatch(r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)", version):
-              raise SystemExit("Version must be plain SemVer, for example 0.1.2")
+              raise SystemExit("Version must be plain SemVer, for example 0.2.0")
 
           manifest_version = json.loads(
-              Path("custom_components/barbs_erse/manifest.json").read_text()
+              Path("custom_components/berse/manifest.json").read_text()
           )["version"]
           project_version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
-          constants = Path("custom_components/barbs_erse/const.py").read_text()
+          constants = Path("custom_components/berse/const.py").read_text()
           const_match = re.search(r'^VERSION = "([^"]+)"$', constants, re.MULTILINE)
           if const_match is None:
               raise SystemExit("Could not read the integration version from const.py")
