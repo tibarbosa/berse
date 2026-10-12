@@ -9,7 +9,6 @@ import pytest
 
 from custom_components.barbs_erse.parser import CatalogParseError, parse_catalog
 
-
 CONDITION_FIELDS = [
     "COM", "COD_Proposta", "NomeProposta", "Fornecimento", "Segmento", "TipoContagem",
     "Data ini", "Data fim", "FiltroPrecosIndex_ELE", "FiltroServicosAdic",
