@@ -1,0 +1,13 @@
+{
+  "domain": "barbs_erse",
+  "name": "barbs-erse",
+  "codeowners": ["@tibarbosa"],
+  "config_flow": true,
+  "dependencies": ["http", "lovelace", "recorder"],
+  "documentation": "https://github.com/tibarbosa/ha-erse",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/tibarbosa/ha-erse/issues",
+  "version": "0.1.0",
+  "homeassistant": "2026.3.0"
+}

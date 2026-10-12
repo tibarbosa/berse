@@ -1,6 +1,6 @@
 # barbs-erse implementation plan
 
-Revision: 12 October 2026. Status: planning only. This revision supersedes the previous implementation plan. It does not claim that the existing integration meets these requirements.
+Revision: 12 October 2026. Status: implementation draft. This revision supersedes the previous implementation plan. A release is not considered complete until the source, HACS, hassfest, and real Home Assistant acceptance gates below have been verified.
 
 ## 1. Confirmed scope
 

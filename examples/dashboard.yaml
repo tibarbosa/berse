@@ -1,0 +1,7 @@
+title: Electricity offers
+views:
+  - title: Offers
+    path: electricity-offers
+    cards:
+      - type: custom:barbs-erse-offers
+        entity: sensor.barbs_erse_best_offers

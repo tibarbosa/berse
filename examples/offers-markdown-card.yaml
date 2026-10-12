@@ -1,0 +1,17 @@
+type: markdown
+title: barbs-erse · Best offers
+content: >-
+  {% set entity = 'sensor.barbs_erse_best_offers' %}
+  {% set offers = state_attr(entity, 'offers') or [] %}
+  **{{ state_attr(entity, 'power_kva') or '—' }} kVA · Single rate · Excluding VAT**
+
+  {% for offer in offers[:10] %}
+  - **{{ offer.supplier_name | e }}**: {{ offer.standing_charge }} €/day / {{ offer.energy_price }} €/kWh
+    <details><summary>{{ offer.offer_name | e }}</summary>
+    Combined cost: {{ offer.candidate_cost }} EUR · Saving: {{ offer.savings }} EUR
+    </details>
+  {% endfor %}
+
+  Last update: {{ state_attr(entity, 'last_successful_update') or 'Not yet successful' }}
+  
+  New offers: {{ state_attr(entity, 'new_offer_count') or 0 }}

@@ -1,0 +1,33 @@
+blueprint:
+  name: barbs-erse cheaper offer
+  description: Run a notification action when barbs-erse finds lower comparable costs.
+  domain: automation
+  input:
+    notification_action:
+      name: Notification action
+      description: Choose an action such as a mobile notification or persistent notification.
+      selector:
+        action: {}
+
+trigger:
+  - platform: event
+    event_type: barbs_erse_cheaper_offer
+
+condition: []
+
+action:
+  - variables:
+      offers: "{{ trigger.event.data.candidates }}"
+      offer_summary: >-
+        {% for offer in offers %}
+        {{ offer.supplier_name }} — {{ offer.offer_name }}:
+        {{ offer.saving_eur_ex_vat }} EUR over {{ trigger.event.data.reference_days }} days
+        ({{ offer.saving_percent }}% savings, excluding VAT).
+        {% endfor %}
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ offers | count > 0 }}"
+        sequence: !input notification_action
+
+mode: single
