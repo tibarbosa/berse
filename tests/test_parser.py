@@ -2,7 +2,7 @@
 
 import csv
 import zipfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from io import BytesIO, StringIO
 
 import pytest
@@ -77,7 +77,7 @@ def test_parser_keeps_electric_component_and_excludes_gas() -> None:
     catalog = parse_catalog(
         archive(),
         "https://example.test/offers.zip",
-        datetime(2026, 10, 12, tzinfo=timezone.utc),
+        datetime(2026, 10, 12, tzinfo=UTC),
     )
 
     assert len(catalog.offers) == 1
@@ -90,7 +90,7 @@ def test_parser_keeps_electric_component_and_excludes_gas() -> None:
 
 
 def test_blank_service_cost_is_zero_only_when_services_are_explicitly_not_required() -> None:
-    fetched_at = datetime(2026, 10, 12, tzinfo=timezone.utc)
+    fetched_at = datetime(2026, 10, 12, tzinfo=UTC)
     condition = {
         "COM": "A", "COD_Proposta": "A1", "NomeProposta": "No extra services",
         "Fornecimento": "ELE", "Segmento": "Dom", "TipoContagem": "1",
@@ -121,7 +121,7 @@ def test_blank_service_cost_is_zero_only_when_services_are_explicitly_not_requir
 
 
 def test_parser_rejects_empty_tables_and_conflicting_electric_prices() -> None:
-    fetched_at = datetime(2026, 10, 12, tzinfo=timezone.utc)
+    fetched_at = datetime(2026, 10, 12, tzinfo=UTC)
     with pytest.raises(CatalogParseError, match="empty source table"):
         parse_catalog(archive(price_rows=[]), "https://example.test/offers.zip", fetched_at)
     with pytest.raises(CatalogParseError, match="empty source table"):

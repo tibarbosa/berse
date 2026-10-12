@@ -1,6 +1,6 @@
 """Cumulative-meter history and hourly-statistics tests."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 from custom_components.barbs_erse.consumption import (
@@ -9,9 +9,6 @@ from custom_components.barbs_erse.consumption import (
     _last_complete_hour,
     meter_at,
 )
-
-
-UTC = timezone.utc
 
 
 def test_counter_resets_are_counted_from_zero() -> None:

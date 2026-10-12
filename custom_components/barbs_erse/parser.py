@@ -11,7 +11,6 @@ import zipfile
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from importlib import resources
-from typing import Any
 
 from .models import Catalog, Offer
 

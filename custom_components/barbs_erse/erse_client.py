@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from urllib.parse import urljoin
 
 import aiohttp
-
 from homeassistant.util import dt as dt_util
 
 from .const import SOURCE_SETTINGS_URL, SOURCE_USER_AGENT
