@@ -63,7 +63,7 @@ class ErseClient:
             raise ErseClientError("ERSE csvPath must use HTTPS")
         download_headers = {
             "User-Agent": SOURCE_USER_AGENT,
-            "Accept": "application/zip, application/octet-stream",
+            "Accept": "*/*",
         }
         if etag and etag_url == zip_url:
             download_headers["If-None-Match"] = etag

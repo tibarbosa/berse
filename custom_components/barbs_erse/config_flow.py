@@ -48,7 +48,7 @@ def _energy_price_selector() -> selector.NumberSelector:
         selector.NumberSelectorConfig(
             min=0,
             max=10,
-            step=0.000001,
+            step=0.001,
             mode=selector.NumberSelectorMode.BOX,
             unit_of_measurement="EUR/kWh",
         )
@@ -60,7 +60,7 @@ def _standing_selector() -> selector.NumberSelector:
         selector.NumberSelectorConfig(
             min=0,
             max=10,
-            step=0.000001,
+            step=0.001,
             mode=selector.NumberSelectorMode.BOX,
             unit_of_measurement="EUR/day",
         )
