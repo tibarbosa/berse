@@ -41,7 +41,7 @@ class PriceNumber(BarbsErseEntity, NumberEntity):
         self._key = key
         self._attr_translation_key = name_key
         self._attr_native_unit_of_measurement = "EUR/kWh" if key == CONF_ENERGY_PRICE else "EUR/day"
-        self._attr_icon = "mdi:cash" if key == CONF_ENERGY_PRICE else "mdi:calendar-cash"
+        self._attr_icon = "mdi:cash" if key == CONF_ENERGY_PRICE else "mdi:cash-clock"
 
     @property
     def native_value(self) -> float:
