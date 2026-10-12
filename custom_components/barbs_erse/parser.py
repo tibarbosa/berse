@@ -16,7 +16,7 @@ from typing import Any
 from .models import Catalog, Offer
 
 _LOGGER = logging.getLogger(__name__)
-PARSER_VERSION = 1
+PARSER_VERSION = 2
 MAX_ZIP_BYTES = 12 * 1024 * 1024
 MAX_ENTRY_BYTES = 12 * 1024 * 1024
 CONDITION_FILE = "CondComerciais.csv"
@@ -279,7 +279,11 @@ def parse_catalog(payload: bytes, source_url: str, fetched_at: datetime) -> Cata
                 eligibility=eligibility,
                 mandatory_services_per_year=service_cost,
                 conditional_eligibility=conditional_eligibility,
-                unresolved_costs=service_cost_value is None,
+                # ERSE leaves the annual cost blank when the explicit service
+                # filter is "N". That means there is no additional service
+                # cost, not an unknown amount. A blank cost with "S" or an
+                # unrecognized flag remains unresolved and is excluded.
+                unresolved_costs=service_cost_value is None and service_flag is not False,
                 source_identity=normalized_identity,
             )
         )

@@ -34,6 +34,7 @@ from .consumption import EnergyWindow, async_read_energy, meter_at
 from .erse_client import ErseClient, ErseClientError
 from .models import Catalog, Offer
 from .notifications import async_emit_savings_event
+from .parser import PARSER_VERSION
 from .pricing import RankedOffer, rank_offers
 from .storage import CatalogStorage, EntryStorage
 
@@ -78,18 +79,24 @@ class CatalogService:
         async with self._lock:
             now = dt_util.now()
             loop = asyncio.get_running_loop()
+            parser_upgrade = (
+                self.catalog is not None
+                and self.catalog.parser_version != PARSER_VERSION
+            )
             if (
-                self._last_attempt_monotonic is not None
+                not parser_upgrade
+                and self._last_attempt_monotonic is not None
                 and loop.time() - self._last_attempt_monotonic < 15
             ):
                 return None
             if (
-                not force
+                not parser_upgrade
+                and not force
                 and self._last_attempt_monotonic is not None
                 and loop.time() - self._last_attempt_monotonic < 3600
             ):
                 return None
-            if not force and self.last_successful_update:
+            if not force and not parser_upgrade and self.last_successful_update:
                 try:
                     previous_success = datetime.fromisoformat(self.last_successful_update)
                     if (
@@ -101,7 +108,10 @@ class CatalogService:
                     pass
             self._last_attempt_monotonic = loop.time()
             try:
-                result = await self._client.async_fetch(self.etag, self.etag_url)
+                result = await self._client.async_fetch(
+                    None if parser_upgrade else self.etag,
+                    None if parser_upgrade else self.etag_url,
+                )
                 timestamp = dt_util.now().isoformat()
                 if result.not_modified:
                     if self.catalog is None:

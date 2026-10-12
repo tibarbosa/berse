@@ -35,7 +35,7 @@ For YAML-managed dashboards, add the module resource to the dashboard's resource
 ```yaml
 lovelace:
   resources:
-    - url: /barbs_erse/barbs-erse-offers.js?v=0.1.1
+    - url: /barbs_erse/barbs-erse-offers.js?v=0.1.2
       type: module
 ```
 

@@ -89,6 +89,37 @@ def test_parser_keeps_electric_component_and_excludes_gas() -> None:
     assert offer.source_identity == ("A", "A1", "4.6", "1")
 
 
+def test_blank_service_cost_is_zero_only_when_services_are_explicitly_not_required() -> None:
+    fetched_at = datetime(2026, 10, 12, tzinfo=timezone.utc)
+    condition = {
+        "COM": "A", "COD_Proposta": "A1", "NomeProposta": "No extra services",
+        "Fornecimento": "ELE", "Segmento": "Dom", "TipoContagem": "1",
+        "Data ini": "01/01/2026", "Data fim": "31/12/2026",
+        "FiltroPrecosIndex_ELE": "N", "FiltroServicosAdic": "N",
+        "CustoServicos_s/IVA (€/ano)": "", "LinkFichaPadrao": "", "LinkOfertaCom": "",
+    }
+    price = {
+        "COM": "A", "COD_Proposta": "A1", "Pot_Cont": "5,75", "Contagem": "1",
+        "TF": "0,25", "TV|TVFV|TVP": "0,17", "TFGN": "", "TVGN": "",
+    }
+    offer = parse_catalog(
+        archive(condition_rows=[condition], price_rows=[price]),
+        "https://example.test/offers.zip",
+        fetched_at,
+    ).offers[0]
+    assert offer.mandatory_services_per_year == 0
+    assert offer.unresolved_costs is False
+
+    condition["FiltroServicosAdic"] = "S"
+    offer = parse_catalog(
+        archive(condition_rows=[condition], price_rows=[price]),
+        "https://example.test/offers.zip",
+        fetched_at,
+    ).offers[0]
+    assert offer.conditional_eligibility is True
+    assert offer.unresolved_costs is True
+
+
 def test_parser_rejects_empty_tables_and_conflicting_electric_prices() -> None:
     fetched_at = datetime(2026, 10, 12, tzinfo=timezone.utc)
     with pytest.raises(CatalogParseError, match="empty source table"):

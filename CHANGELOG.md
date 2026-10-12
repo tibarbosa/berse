@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+
+- Treat blank ERSE service costs as zero when the source explicitly says no additional services are required.
+- Rebuild cached catalogs after parser upgrades so updated eligibility rules take effect immediately.
+
 ## 0.1.1
 
 - Fix Home Assistant setup form number selector validation.
