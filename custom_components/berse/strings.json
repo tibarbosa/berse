@@ -41,7 +41,11 @@
           "initial_summary": "Send an initial savings summary",
           "consumption_mode": "Consumption source",
           "manual_kwh": "Manual consumption per billing period (kWh)",
-          "energy_entity": "Imported energy sensor"
+          "energy_entity": "Imported energy sensor",
+          "cost_price_mode": "Current cost pricing"
+        },
+        "data_description": {
+          "cost_price_mode": "Use current contract prices for the whole period when correcting setup values. Use prices recorded over time for actual tariff changes. This only changes Current cost; offer comparisons always use current prices. Recorded price history is preserved."
         }
       }
     },

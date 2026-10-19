@@ -34,6 +34,8 @@ consumption_kWh × energy_price + billing_days × standing_charge
 
 Sensor mode ranks from the last complete period, or the active partial period when needed. Manual mode uses the configured kWh and full billing period immediately, without Recorder history. The measured **Energy used** and **Current cost** sensors remain unknown in manual mode; the offers card still estimates your current contract for the same assumed consumption.
 
+Under **Configure → Current cost pricing**, choose **Current contract prices for the whole period** if the prices you entered apply to all measured usage in the billing cycle, including corrections to setup values. Choose **Prices recorded over time** for actual tariff changes; hourly history cannot resolve an energy price change within an hour, so Current cost remains unknown in that case. Changing this option preserves recorded price history and does not affect offer rankings.
+
 Market, indexed offer, conditional eligibility, and notification preferences are available under the integration's **Configure** options.
 
 ## Dashboard card
@@ -45,7 +47,7 @@ For a YAML-managed dashboard, add this resource:
 ```yaml
 lovelace:
   resources:
-    - url: /berse/berse-offers.js?v=0.2.0
+    - url: /berse/berse-offers.js?v=0.2.1
       type: module
 ```
 

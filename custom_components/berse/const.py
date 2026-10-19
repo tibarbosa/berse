@@ -4,11 +4,14 @@ from datetime import timedelta
 
 DOMAIN = "berse"
 NAME = "berse"
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 MANUFACTURER = "berse"
 
 CONF_CONSUMPTION_MODE = "consumption_mode"
 CONF_MANUAL_KWH = "manual_kwh"
+CONF_COST_PRICE_MODE = "cost_price_mode"
+COST_PRICES_RECORDED = "recorded"
+COST_PRICES_CURRENT = "current"
 CONSUMPTION_SENSOR = "sensor"
 CONSUMPTION_MANUAL = "manual"
 

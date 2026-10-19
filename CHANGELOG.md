@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1
+
+- Add a Current cost pricing option to apply current contract rates to the whole measured period when correcting setup prices, without deleting recorded price history.
+- Keep hourly-statistics costs available after standing-charge-only or numerically unchanged price edits.
+- Preserve the unknown cost guard for genuine energy price changes within an hour in recorded-price mode.
+- Expose current-cost pricing mode, consumption source and failure notes in sensor attributes and diagnostics.
+
 ## 0.2.0
 
 - Rename the integration and domain to berse; use a fresh setup.

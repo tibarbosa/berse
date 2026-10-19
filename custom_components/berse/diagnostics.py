@@ -38,6 +38,10 @@ async def async_get_config_entry_diagnostics(
         "coordinator": {
             "status": data.get("status"),
             "ranking_status": data.get("ranking_status"),
+            "current_cost_note": data.get("current_cost_note"),
+            "current_cost_price_mode": data.get("current_cost_price_mode"),
+            "current_cost_cutoff": data.get("current_cost_cutoff"),
+            "consumption_source": data.get("consumption_source"),
             "reference_days": data.get("reference_days"),
             "reference_kwh": data.get("reference_kwh"),
             "new_offer_count": data.get("new_offer_count"),

@@ -20,6 +20,7 @@ from .const import (
     CONF_BILLING_DAYS,
     CONF_BILLING_START,
     CONF_CONSUMPTION_MODE,
+    CONF_COST_PRICE_MODE,
     CONF_ENERGY_ENTITY,
     CONF_ENERGY_PRICE,
     CONF_INCLUDE_INDEXED,
@@ -28,6 +29,8 @@ from .const import (
     CONF_POWER,
     CONF_STANDING_CHARGE,
     CONSUMPTION_MANUAL,
+    COST_PRICES_CURRENT,
+    COST_PRICES_RECORDED,
     DOMAIN,
     MARKET_ALL,
     MAX_OFFERS,
@@ -301,7 +304,17 @@ class OfferCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 )
                 if current_cost is None and current_window.source == "hourly_statistics":
                     current_cost_note = (
-                        "Hourly statistics cannot split usage around a within-hour price change."
+                        "Hourly statistics cannot split usage around a within-hour energy price "
+                        "change. If correcting setup prices, choose 'Current contract prices for "
+                        "the whole period' under Current cost pricing in Configure."
+                    )
+                elif (
+                    current_cost is not None
+                    and config.get(CONF_COST_PRICE_MODE) == COST_PRICES_CURRENT
+                ):
+                    current_cost_note = (
+                        "Measured consumption and completed standing-charge days priced at the "
+                        "current contract rates for the whole period."
                     )
         else:
             current_cost_note = (
@@ -377,6 +390,7 @@ class OfferCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "energy_used": current_window.kwh if current_window.coverage_complete else None,
             "current_cost": current_cost,
             "current_cost_note": current_cost_note,
+            "current_cost_price_mode": config.get(CONF_COST_PRICE_MODE, COST_PRICES_RECORDED),
             "current_cost_cutoff": cutoff_local.isoformat() if cutoff_local else None,
             "consumption_source": current_window.source,
             "standing_charge_days": current_days,
@@ -453,7 +467,11 @@ class OfferCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         standing_days: int,
         config: dict[str, Any],
     ) -> Decimal | None:
-        """Accrue measured energy using the price effective at each interval."""
+        """Price measured usage with the selected current or recorded contract rates."""
+        if config.get(CONF_COST_PRICE_MODE, COST_PRICES_RECORDED) == COST_PRICES_CURRENT:
+            return window.kwh * _decimal(config[CONF_ENERGY_PRICE]) + standing_days * _decimal(
+                config[CONF_STANDING_CHARGE]
+            )
         records = list(self.entry_storage.data.get("price_history", []))
 
         def _effective_moment(record: dict[str, Any]) -> datetime:
@@ -466,6 +484,8 @@ class OfferCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return dt_util.as_utc(moment)
 
         records.sort(key=_effective_moment)
+        # Price entities store complete snapshots; the last simultaneous edit wins.
+        records = list({_effective_moment(record): record for record in records}.values())
         if not records:
             records = [
                 {
@@ -477,14 +497,18 @@ class OfferCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         cycle_start_utc = dt_util.as_utc(cycle_start)
         cutoff_utc = dt_util.as_utc(cutoff_local)
         effective: list[tuple[datetime, dict[str, Any]]] = []
+        energy_price = _decimal(records[0].get("energy_price", config[CONF_ENERGY_PRICE]))
         for record in records:
             moment_utc = _effective_moment(record)
-            if cycle_start_utc < moment_utc < cutoff_utc:
+            if moment_utc >= cutoff_utc:
+                break
+            next_price = _decimal(record.get("energy_price", config[CONF_ENERGY_PRICE]))
+            if cycle_start_utc < moment_utc and next_price != energy_price:
                 effective.append((moment_utc, record))
+            energy_price = next_price
         if window.source == "hourly_statistics" and any(
-            not record.get("seed", False)
-            and (moment.minute != 0 or moment.second != 0 or moment.microsecond != 0)
-            for moment, record in effective
+            moment.minute != 0 or moment.second != 0 or moment.microsecond != 0
+            for moment, _ in effective
         ):
             # Hourly totals cannot identify which side of a within-hour price
             # change consumed the energy, so do not publish a misleading cost.

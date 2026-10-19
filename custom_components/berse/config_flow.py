@@ -16,6 +16,7 @@ from .const import (
     CONF_BILLING_DAYS,
     CONF_BILLING_START,
     CONF_CONSUMPTION_MODE,
+    CONF_COST_PRICE_MODE,
     CONF_ENERGY_ENTITY,
     CONF_ENERGY_PRICE,
     CONF_INCLUDE_INDEXED,
@@ -30,6 +31,8 @@ from .const import (
     CONF_UPDATE_TIME,
     CONSUMPTION_MANUAL,
     CONSUMPTION_SENSOR,
+    COST_PRICES_CURRENT,
+    COST_PRICES_RECORDED,
     DEFAULT_BILLING_DAYS,
     DEFAULT_POWER,
     DEFAULT_UPDATE_TIME,
@@ -87,7 +90,8 @@ def _consumption_fields(values: dict[str, Any]) -> dict:
     )
     return {
         vol.Required(
-            CONF_CONSUMPTION_MODE, default=values.get(CONF_CONSUMPTION_MODE, CONSUMPTION_SENSOR)
+            CONF_CONSUMPTION_MODE,
+            default=values.get(CONF_CONSUMPTION_MODE, CONSUMPTION_SENSOR),
         ): selector.SelectSelector(
             selector.SelectSelectorConfig(
                 options=[
@@ -228,6 +232,24 @@ class BerseOptionsFlow(config_entries.OptionsFlow):
         schema = vol.Schema(
             {
                 **_consumption_fields(options),
+                vol.Required(
+                    CONF_COST_PRICE_MODE,
+                    default=options.get(CONF_COST_PRICE_MODE, COST_PRICES_RECORDED),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            {
+                                "value": COST_PRICES_RECORDED,
+                                "label": "Prices recorded over time",
+                            },
+                            {
+                                "value": COST_PRICES_CURRENT,
+                                "label": "Current contract prices for the whole period",
+                            },
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
                 vol.Required(
                     CONF_MARKET, default=options.get(CONF_MARKET, MARKET_ALL)
                 ): selector.SelectSelector(

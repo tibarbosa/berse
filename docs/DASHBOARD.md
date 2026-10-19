@@ -13,7 +13,7 @@ A complete dashboard is in [dashboard.yaml](../examples/dashboard.yaml). For das
 ```yaml
 lovelace:
   resources:
-    - url: /berse/berse-offers.js?v=0.2.0
+    - url: /berse/berse-offers.js?v=0.2.1
       type: module
 ```
 

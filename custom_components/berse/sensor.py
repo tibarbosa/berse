@@ -73,6 +73,8 @@ class CurrentCostSensor(BerseEntity, SensorEntity):
             "data_cutoff": self.coordinator.data.get("current_cost_cutoff"),
             "standing_charge_days": self.coordinator.data.get("standing_charge_days"),
             "cost_note": self.coordinator.data.get("current_cost_note"),
+            "cost_price_mode": self.coordinator.data.get("current_cost_price_mode"),
+            "consumption_source": self.coordinator.data.get("consumption_source"),
             "price_basis": "excluding VAT",
         }
 
