@@ -17,7 +17,7 @@ content: |-
 
   Estimated cost: {{ '%.2f' | format(offer.candidate_cost | float) }} EUR · Saving: {{ '%.2f' | format(offer.savings | float) }} EUR
 
-  Energy: {{ '%.2f' | format(offer.energy_price | float) }} EUR/kWh · Standing: {{ '%.2f' | format(offer.standing_charge | float) }} EUR/day
+  Energy: {{ '%.4f' | format(offer.energy_price | float) }} EUR/kWh · Standing: {{ '%.4f' | format(offer.standing_charge | float) }} EUR/day
 
   {% endfor %}
   Last update: {{ state_attr(entity, 'last_successful_update') or 'Not yet updated' }}

@@ -13,7 +13,7 @@ A complete dashboard is in [dashboard.yaml](../examples/dashboard.yaml). For das
 ```yaml
 lovelace:
   resources:
-    - url: /berse/berse-offers.js?v=0.2.1
+    - url: /berse/berse-offers.js?v=0.3.0
       type: module
 ```
 
@@ -21,7 +21,9 @@ lovelace:
 
 Every offer uses `kWh × energy price + days × standing charge`. The dashed reference comes from the offer record's `current_cost`, calculated over that exact same period. The measured current-cycle cost sensor may cover a different period and is not used as the chart reference.
 
-Bars start at zero and share one scale. Green means cheaper, grey means equal cost at displayed cent precision, and red means more expensive. Text badges explain the difference without relying on color. The five cheapest eligible offers stay visible even if all cost more. Costs and consumption use two decimal places; sorting retains the original precision. Expand **Offer details** for validity, eligibility and supplier links.
+Bars start at zero and share one scale. Green means cheaper, grey means equal cost at displayed cent precision, and red means more expensive. Text badges explain the difference without relying on color. The five cheapest eligible offers stay visible even if all cost more. Total costs, savings and consumption use two decimal places; energy prices and daily standing charges use four decimal places; sorting retains the original precision. Essential conditions appear as English labels below each offer. Expand **Offer details** for grouped eligibility, contract, billing and payment, precise unit rates, price-update notes, additional services, validity and links. **Offer factsheet** and **General conditions** use separate source URLs. Missing important data is shown as **Not provided**; no commitment or payment requirements are inferred from missing fields. Portuguese supplier descriptions remain available under **Original ERSE information**. New-customer and promotion flags describe source conditions, not a confirmation that your household qualifies. The integration does not apply additional promotional refunds or social-tariff discounts to the displayed comparison.
+
+Supplier names and logos are discovered daily from ERSE using a fictional reference profile, without submitting your consumption or current rates. Images are cached locally in Home Assistant and checked weekly for changes. Failed discovery preserves previous metadata; bundled logos and initials provide fallbacks. New suppliers appear normally and use initials until matching metadata becomes available. Turn **Show supplier logos** off in the visual card editor or set `show_supplier_logos: false`. Logo sources and refresh instructions are in the frontend suppliers directory.
 
 Manual mode uses your configured kWh for the full billing period. It never invents measured energy history. Example: 100 kWh over 30 days at EUR 0.20/kWh plus EUR 0.40/day gives a current-contract estimate of EUR 32.00.
 
@@ -35,6 +37,7 @@ Optional card configuration:
 type: custom:berse-offers
 entity: sensor.berse_best_offers
 title: Your 5 best offers
+show_supplier_logos: true
 ```
 
 The card follows Home Assistant theme variables, supports narrow dashboard columns, escapes supplier text through DOM text nodes, and accepts only HTTPS supplier links. Stale, missing-history, unavailable and empty-result states have explicit messages. The refresh button uses the sensor's registered companion entity rather than guessing its ID.

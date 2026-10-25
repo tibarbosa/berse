@@ -28,6 +28,14 @@ const offers = [
 ].map(([supplier_name,offer_name,candidate_cost],i) => ({
   supplier_name,offer_name,candidate_cost,offer_id:`DEMO-${i+1}`,
   standing_charge:0.4,energy_price:(candidate_cost-12)/300,
+  eligibility: i === 0 ? {
+    FiltroContratacao:'100', Filtrofaturacao:'10', FiltroPagamento:'100',
+    FiltroAtendimento:'1111', 'FiltroFidelização':'N', FiltroNovosClientes:'S',
+    'FiltroRestrições':'N', FiltroServicosAdic:'N', FiltroRenovavel_ELE:'S',
+    FiltroTarifaSocial:'S', TxTOferta:'Fictional promotion; check the supplier terms.',
+  } : {},
+  commercial_details: i === 0 ? {DuracaoContrato:'12', TxTFaturacao:'Monthly',
+    TxTAtualizaPrecos:'Prices can change under the contract revision terms.'} : {},
   valid_from:'2026-10-01',valid_until:'2026-10-31',market:'free',indexed:false,
 }));
 for (const [id,current_cost] of [['mixed',60],['higher',42]]) {

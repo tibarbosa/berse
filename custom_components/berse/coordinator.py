@@ -43,6 +43,7 @@ from .notifications import async_emit_savings_event
 from .parser import PARSER_VERSION
 from .pricing import RankedOffer, rank_offers
 from .storage import CatalogStorage, EntryStorage
+from .suppliers import SupplierMetadata
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,12 +67,16 @@ class CatalogService:
         self._lock = asyncio.Lock()
         self._last_attempt_monotonic: float | None = None
         self._loaded = False
-        self._client = ErseClient(async_get_clientsession(hass))
+        session = async_get_clientsession(hass)
+        self._client = ErseClient(session)
+        self.suppliers = SupplierMetadata(hass, session)
 
     async def async_load(self) -> None:
         if self._loaded:
             return
         self.catalog = await self.storage.async_load()
+        await self.suppliers.async_load()
+        self.suppliers.apply(self.catalog)
         saved = self.storage.data
         self.etag = saved.get("etag")
         self.etag_url = saved.get("etag_url")
@@ -120,6 +125,7 @@ class CatalogService:
                 if result.not_modified:
                     if self.catalog is None:
                         raise ErseClientError("ERSE returned not-modified without a saved catalog")
+                    await self.suppliers.async_refresh(self.catalog)
                     self.new_identity_ids = set()
                     await self.storage.async_mark_not_modified(timestamp)
                     self.last_successful_update = timestamp
@@ -127,6 +133,7 @@ class CatalogService:
                     return True
                 catalog = result.catalog
                 assert isinstance(catalog, Catalog)
+                await self.suppliers.async_refresh(catalog)
                 current_ids = sorted(offer.identity for offer in catalog.offers)
                 previous_ids = list(self.storage.data.get("current_ids", []))
                 had_previous = bool(self.storage.data.get("catalog"))
@@ -581,6 +588,9 @@ class OfferCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "terms_url": offer.terms_url,
             "offer_url": offer.offer_url,
             "eligibility": offer.eligibility,
+            "commercial_details": offer.commercial_details,
+            "general_conditions_url": offer.general_conditions_url,
+            "supplier_logo_url": offer.supplier_logo_url,
             "valid_from": offer.valid_from.isoformat() if offer.valid_from else None,
             "valid_until": offer.valid_until.isoformat() if offer.valid_until else None,
             "reference_label": reference_label,

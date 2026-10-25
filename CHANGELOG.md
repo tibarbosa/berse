@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0
+
+- Organize offer details into eligibility, contract, billing, price and additional-service sections for every supplier.
+- Decode ERSE condition flags into English labels; keep original supplier and ERSE descriptions in a separate expandable section.
+- Show essential conditions above the fold and identify marginal savings.
+- Distinguish offer factsheets from general contract conditions and describe non-indexed offers without promising unchanged prices.
+- Discover supplier names and logos automatically through the ERSE simulator using fictional profiles, cache images locally, and retain bundled logos and initials as fallbacks.
+- Show energy prices and daily standing charges with four decimal places throughout the card and Markdown examples; keep totals and savings at two decimals.
+- Refresh cached catalogs after the metadata upgrade; preserve existing integration settings and price history.
+
 ## 0.2.1
 
 - Add a Current cost pricing option to apply current contract rates to the whole measured period when correcting setup prices, without deleting recorded price history.

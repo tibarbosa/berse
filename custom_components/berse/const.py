@@ -4,7 +4,7 @@ from datetime import timedelta
 
 DOMAIN = "berse"
 NAME = "berse"
-VERSION = "0.2.1"
+VERSION = "0.3.0"
 MANUFACTURER = "berse"
 
 CONF_CONSUMPTION_MODE = "consumption_mode"

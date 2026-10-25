@@ -40,14 +40,16 @@ Market, indexed offer, conditional eligibility, and notification preferences are
 
 ## Dashboard card
 
-In a storage-mode dashboard, select **Edit dashboard → Add card → berse Offers** and choose the **Best offers** sensor. The integration registers the card resource automatically. The card sorts and displays up to five offers, even when none saves money. Its shared cost scale marks your contract with a dashed line: green shows savings, grey shows equal cost, and red shows higher cost. All displayed costs and kWh use two decimal places. Offer links and eligibility details are available in each row.
+In a storage-mode dashboard, select **Edit dashboard → Add card → berse Offers** and choose the **Best offers** sensor. The integration registers the card resource automatically. The card sorts and displays up to five offers, even when none saves money. Its shared cost scale marks your contract with a dashed line: green shows savings, grey shows equal cost, and red shows higher cost. Total costs, savings and consumption use two decimal places; energy prices and daily standing charges use four. Essential conditions appear below each offer. Expand **Offer details** for eligibility, contract duration, billing, precise unit rates, extra services, original ERSE information and supplier documents. Missing important data is marked **Not provided**. Non-indexed prices can still change under the supplier's terms.
+
+Supplier names and logos update automatically from ERSE using a fictional profile; your consumption and contract prices are not submitted. Logos are cached and served locally by Home Assistant, with bundled logos and supplier initials as fallbacks. Discovery runs daily and cached images are checked weekly; new suppliers use initials until ERSE provides a matching logo. Disable **Show supplier logos** in the card editor, or set `show_supplier_logos: false` in YAML.
 
 For a YAML-managed dashboard, add this resource:
 
 ```yaml
 lovelace:
   resources:
-    - url: /berse/berse-offers.js?v=0.2.1
+    - url: /berse/berse-offers.js?v=0.3.0
       type: module
 ```
 

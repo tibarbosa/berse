@@ -36,6 +36,10 @@ class Offer:
     unresolved_costs: bool = False
     source_identity: tuple[str, str, str, str] = ("", "", "", "1")
 
+    commercial_details: dict[str, str] = field(default_factory=dict)
+    general_conditions_url: str | None = None
+    supplier_logo_url: str | None = None
+
     @property
     def identity(self) -> str:
         """Stable, display-name-independent identity."""

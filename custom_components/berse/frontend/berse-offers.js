@@ -40,7 +40,7 @@
       if (!this.shadowRoot || !this._hass) return;
       const form = document.createElement("ha-form");
       form.hass = this._hass;
-      form.data = { entity: this._config.entity || "" };
+      form.data = { entity: this._config.entity || "", show_supplier_logos: this._config.show_supplier_logos !== false };
       form.schema = [
         {
           name: "entity",
@@ -48,7 +48,10 @@
           selector: { entity: { domain: ["sensor"] } },
         },
       ];
-      form.computeLabel = (schema) => (schema.name === "entity" ? "Best offers sensor" : undefined);
+      form.schema.push({ name: "show_supplier_logos", selector: { boolean: {} } });
+      form.computeLabel = (schema) => ({
+        entity: "Best offers sensor", show_supplier_logos: "Show supplier logos",
+      })[schema.name];
       form.addEventListener("value-changed", (event) => {
         this.dispatchEvent(
           new CustomEvent("config-changed", {
@@ -98,7 +101,142 @@
       }).format(Object.is(number, -0) ? 0 : number);
     }
     _money(value) { return `€${this._format(value)}`; }
-    _row(offer, index, baseline, maximum) {
+    _unit(value) {
+      const number = this._number(value);
+      return number === null ? "Not provided" : new Intl.NumberFormat("en-GB", {
+        minimumFractionDigits: 4, maximumFractionDigits: 4,
+      }).format(number);
+    }
+    _flag(value) {
+      const normalized = String(value ?? "").trim().toLowerCase();
+      if (["s", "sim", "y", "yes", "true", "1"].includes(normalized)) return true;
+      if (["n", "não", "nao", "no", "false", "0"].includes(normalized)) return false;
+      return null;
+    }
+    _choices(value, labels) {
+      const flags = String(value || "").trim();
+      if (flags.length !== labels.length || !/^[01]+$/.test(flags) || !flags.includes("1")) return null;
+      return labels.filter((_, index) => flags[index] === "1");
+    }
+    _conditions(offer) {
+      const source = offer.eligibility || {};
+      const tags = [];
+      if (this._flag(source.FiltroNovosClientes) === true) tags.push("New-customer conditions");
+      if (source.FiltroPagamento === "100") tags.push("Direct debit required");
+      if (source.Filtrofaturacao === "10") tags.push("E-bill required");
+      if (source.FiltroContratacao === "100") tags.push("Online sign-up only");
+      if (this._flag(source["FiltroFidelização"]) === false) tags.push("No commitment indicated");
+      if (this._flag(source["FiltroRestrições"]) === true) tags.push("Additional restrictions");
+      if (this._flag(source.FiltroServicosAdic) === true) tags.push("Mandatory extra services");
+      return tags;
+    }
+    _logo(offer) {
+      const holder = element("span", "supplier-logo");
+      const name = offer.supplier_name || offer.supplier_code || "?";
+      const initials = String(name).split(/\s+/).filter(Boolean).map(part => part[0]).join("").slice(0, 3).toUpperCase();
+      holder.append(element("span", "initials", initials));
+      // Only local packaged or cached assets can be loaded; never remote image URLs.
+      if (typeof offer.supplier_logo_url === "string" && /^\/berse\/(?:suppliers|supplier-cache)\/[a-z0-9_-]+\.(png|jpg)$/.test(offer.supplier_logo_url)) {
+        const image = element("img");
+        image.alt = ""; image.loading = "lazy"; image.decoding = "async";
+        image.addEventListener("load", () => holder.classList.add("loaded"));
+        image.addEventListener("error", () => { image.remove(); holder.classList.remove("loaded"); });
+        image.src = offer.supplier_logo_url;
+        holder.append(image);
+      }
+      holder.setAttribute("aria-hidden", "true");
+      return holder;
+    }
+    _details(offer, kwh, days) {
+      const details = element("details", "offer-details");
+      details.dataset.identity = offer.identity || offer.offer_id;
+      details.append(element("summary", "", "Offer details"));
+      const source = offer.eligibility && typeof offer.eligibility === "object" ? offer.eligibility : {};
+      const commercial = offer.commercial_details || {};
+      const grid = element("div", "details-grid");
+      const group = (heading, lines) => {
+        const section = element("section");
+        section.append(element("h3", "", heading));
+        lines.forEach(line => section.append(element("p", "muted", line)));
+        grid.append(section);
+      };
+      const yesNo = (value, yes, no) => {
+        const flag = this._flag(value);
+        return flag === null ? "Not provided" : flag ? yes : no;
+      };
+      const choices = (value, labels) => this._choices(value, labels)?.join(" · ") || "Not provided";
+      group("Eligibility", [
+        `Sign-up: ${choices(source.FiltroContratacao, ["Online", "In person", "By phone"])}`,
+        `New customers: ${yesNo(source.FiltroNovosClientes, "Benefits or conditions apply; check eligibility", "No new-customer benefit flagged")}`,
+        `Additional restrictions: ${yesNo(source["FiltroRestrições"], "Apply; check original information", "None flagged")}`,
+      ]);
+      const duration = String(commercial.DuracaoContrato || "").trim();
+      group("Contract and promotion", [
+        `Contract duration: ${/^\d+(?:[.,]\d+)?$/.test(duration) ? `${duration.replace(",", ".")} months` : "Not provided"}`,
+        `Commitment: ${yesNo(source["FiltroFidelização"], "Commitment indicated; check supplier terms", "No commitment indicated")}`,
+        "Promotion and renewal: check the original information and supplier documents. Contract duration, discount duration and offer validity can differ.",
+      ]);
+      const precise = (value) => this._unit(value);
+      group("Price breakdown", [
+        `Energy: €${precise(offer.energy_price)}/kWh${kwh === null ? "" : ` · ${this._money(kwh * Number(offer.energy_price))}`}`,
+        `Standing charge: €${precise(offer.standing_charge)}/day${days === null ? "" : ` · ${this._money(days * Number(offer.standing_charge))}`}`,
+        "Excluding VAT. Source unit rates are used as published; no additional promotional refund or social-tariff discount is deducted. Rounded components may not sum exactly.",
+      ]);
+      group("Billing and payment", [
+        `Invoices: ${choices(source.Filtrofaturacao, ["Electronic", "Paper"])}`,
+        `Payment: ${choices(source.FiltroPagamento, ["Direct debit", "Multibanco", "Cash / Payshop / CTT"])}`,
+        `Support: ${choices(source.FiltroAtendimento, ["Written", "In person", "By phone", "Digital"])}`,
+        `Billing interval: ${commercial.TxTFaturacao ? "See original ERSE information" : "Not provided"}`,
+      ]);
+      group("Price updates", [
+        offer.indexed === true ? "Indexed estimate" : offer.indexed === false ? "Non-indexed offer" : "Indexation: Not provided",
+        commercial.TxTAtualizaPrecos ? "Price revision rules are supplied; see original ERSE information." : "Price revision rules: Not provided",
+        "Non-indexed does not guarantee unchanged prices. Check the supplier's revision terms.",
+      ]);
+      group("Other conditions", [
+        `Renewable electricity: ${yesNo(source.FiltroRenovavel_ELE, "100% according to the source", "Not flagged as 100% renewable")}`,
+        `Mandatory extra services: ${yesNo(source.FiltroServicosAdic, "Required; check costs and terms", "None flagged")}`,
+        ...(this._flag(source.FiltroServicosAdic) === true ? [`Published annual service cost: ${this._money(offer.mandatory_services_per_year)} excluding VAT. Not included in energy + standing-charge bars.`] : []),
+        `Social tariff: ${yesNo(source.FiltroTarifaSocial, "Available to eligible households; not applied here", "Not flagged")}`,
+        `Offer validity: ${offer.valid_from || "Not provided"} – ${offer.valid_until || "Not provided"}`,
+      ]);
+      details.append(grid);
+      if (offer.conditional_eligibility) details.append(element("p", "notice", "Conditional eligibility: check the supplier's requirements before switching."));
+      const original = element("details", "original");
+      original.append(element("summary", "", "Original ERSE information"));
+      const fields = {
+        TxTOferta: "Offer and promotion", TxTERSE: "ERSE notes", "TxTContratação": "Sign-up",
+        TxTFatura: "Invoice", TxTPagamento: "Payment", "TxTFidelização": "Commitment",
+        TxTRestricoesAdic: "Additional restrictions", "Detalhe restrições": "Restriction details",
+        TxTServicoAdic: "Mandatory services", DuracaoContrato: "Contract duration (months)",
+        TxTFaturacao: "Billing interval", TxTAtendimento: "Customer support",
+        TxTAtualizaPrecos: "Price updates", TxToutrosServicoAdic: "Other services",
+        TxTReembolsos: "Refunds and promotions", "DetalheOutrosDesc/benefi": "Other benefits",
+      };
+      const seen = new Set();
+      for (const [key, label] of Object.entries(fields)) {
+        const value = String(commercial[key] || source[key] || "").trim();
+        if (!value || seen.has(value)) continue;
+        seen.add(value);
+        original.append(element("h3", "", label));
+        const paragraph = element("p", "muted", value);
+        paragraph.lang = "pt";
+        original.append(paragraph);
+      }
+      if (!seen.size) original.append(element("p", "muted", "Not provided"));
+      details.append(original);
+      const links = element("div", "offer-links");
+      for (const [key, label] of [["offer_url", "Offer page"], ["terms_url", "Offer factsheet"], ["general_conditions_url", "General conditions"]]) {
+        const url = safeExternalUrl(offer[key]);
+        if (!url) continue;
+        const link = element("a", "", label);
+        link.href = url; link.target = "_blank"; link.rel = "noopener noreferrer";
+        links.append(link);
+      }
+      details.append(links, element("p", "muted", `Source offer ID: ${offer.offer_id || "Not provided"}`));
+      return details;
+    }
+    _row(offer, index, baseline, maximum, kwh, days) {
       const cost = this._number(offer.candidate_cost);
       const saving = Math.round((baseline - cost) * 100) / 100;
       const tone = saving > 0 ? "saving" : saving < 0 ? "extra" : "equal";
@@ -106,6 +244,7 @@
       const top = element("div", "top");
       const identity = element("div", "identity");
       identity.append(element("span", "rank", index + 1));
+      if (this._config.show_supplier_logos !== false) identity.append(this._logo(offer));
       const names = element("div", "names");
       names.append(element("strong", "supplier", offer.supplier_name || offer.supplier_code || "Unknown supplier"));
       names.append(element("span", "offer-name", offer.offer_name || "Unnamed offer"));
@@ -121,38 +260,23 @@
       track.append(bar, marker);
       row.append(track);
       const meta = element("div", "meta");
-      meta.append(element("span", "unit-prices", `${this._money(offer.energy_price)}/kWh · ${this._money(offer.standing_charge)}/day`));
-      const badge = saving > 0 ? `Save ${this._money(saving)}` : saving < 0
+      meta.append(element("span", "unit-prices", `€${this._unit(offer.energy_price)}/kWh · €${this._unit(offer.standing_charge)}/day`));
+      const badge = saving > 0 ? `Save ${this._money(saving)}${saving < 1 ? " · Marginal saving" : ""}` : saving < 0
         ? `Costs ${this._money(Math.abs(saving))} more` : `No saving · ${this._money(0)}`;
       meta.append(element("span", `badge ${tone}`, badge));
       row.append(meta);
-      const details = element("details");
-      details.append(element("summary", "", "Offer details"));
-      details.append(element("p", "muted", `Offer ${offer.offer_id || "—"} · ${offer.indexed ? "Indexed estimate" : "Fixed-price offer"} · ${offer.market || "Market not supplied"}`));
-      if (offer.eligibility && typeof offer.eligibility === "object") {
-        const conditions = Object.entries(offer.eligibility)
-          .filter(([, value]) => value !== null && value !== undefined && String(value).trim())
-          .map(([key, value]) => `${key}: ${value}`);
-        if (conditions.length) details.append(element("p", "muted", `Eligibility: ${conditions.join(" · ")}`));
-      } else if (offer.eligibility) {
-        details.append(element("p", "muted", `Eligibility: ${offer.eligibility}`));
-      }
-      if (offer.conditional_eligibility) details.append(element("p", "muted", "Conditional eligibility: check the supplier's requirements."));
-      details.append(element("p", "muted", `Valid from ${offer.valid_from || "—"} to ${offer.valid_until || "—"}`));
-      for (const [key, label] of [["offer_url", "Supplier offer"], ["terms_url", "Terms and conditions"]]) {
-        const url = safeExternalUrl(offer[key]);
-        if (!url) continue;
-        const link = element("a", "", label);
-        link.href = url; link.target = "_blank"; link.rel = "noopener noreferrer";
-        details.append(link);
-      }
-      row.append(details);
+      const tags = element("div", "conditions");
+      this._conditions(offer).forEach(label => tags.append(element("span", "condition", label)));
+      if (tags.childNodes.length) row.append(tags);
+      row.append(this._details(offer, kwh, days));
       return row;
     }
     _render() {
       if (!this._hass || !this._config.entity) return;
       const state = this._hass.states[this._config.entity];
       const data = state?.attributes || {};
+      const expanded = new Set([...this.shadowRoot.querySelectorAll("details.offer-details[open]")].map(node => node.dataset.identity));
+      const originalExpanded = new Set([...this.shadowRoot.querySelectorAll("details.offer-details")].filter(node => node.querySelector(".original")?.open).map(node => node.dataset.identity));
       const style = element("style");
       style.textContent = `
         :host { display:block; color:var(--primary-text-color,#172b35); }
@@ -175,7 +299,7 @@
         .offer-name { font-size:12px; overflow-wrap:anywhere; }
         .rank { display:grid; place-items:center; background:var(--secondary-background-color,#edf3f5); border-radius:50%; width:25px; height:25px; flex-shrink:0; font-size:12px; }
         .cost { font-size:20px; white-space:nowrap; font-variant-numeric:tabular-nums; }
-        .track { margin:14px 0 10px; position:relative; height:13px; border-radius:5px; background:var(--secondary-background-color,#edf3f5); }
+        .track { margin:14px 0 10px; position:relative; height:8px; border-radius:5px; background:var(--secondary-background-color,#edf3f5); }
         .bar { height:100%; border-radius:5px; background:var(--success-color,#168467); }
         .extra .bar { background:var(--error-color,#db4545); }
         .equal .bar { background:var(--secondary-text-color,#788d9a); }
@@ -184,8 +308,27 @@
         .badge { font-weight:600; }
         .saving.badge { color:var(--success-color,#168467); }
         .extra.badge,.extra .cost { color:var(--error-color,#db4545); }
+        .supplier-logo { width:40px; height:40px; flex-shrink:0; border-radius:8px; display:grid; place-items:center; position:relative; background:var(--secondary-background-color,#edf3f5); }
+        .supplier-logo img { width:100%; height:100%; object-fit:contain; padding:4px; background:#fff; border-radius:8px; grid-area:1/1; opacity:0; }
+        .supplier-logo.loaded img { opacity:1; }
+        .initials { grid-area:1/1; font-size:12px; color:var(--secondary-text-color,#657981); }
+        .supplier-logo.loaded .initials { visibility:hidden; }
+        .conditions { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+        .condition { background:var(--secondary-background-color,#edf3f5); color:var(--secondary-text-color,#657981); border-radius:5px; padding:3px 7px; font-size:11px; }
+        .common-conditions { color:var(--secondary-text-color,#657981); font-size:12px; margin:10px 0; }
+        .details-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; padding:16px 0; }
+        .details-grid section { min-width:0; }
+        h3 { font-size:12px; margin:0 0 6px; font-weight:600; }
+        details p { line-height:1.6; overflow-wrap:anywhere; }
+        .original { border-top:1px solid var(--divider-color,#ddd); padding-top:8px; }
+        .original h3 { margin-top:14px; }
+        summary { min-height:32px; color:var(--primary-color,#007f99); }
+        .offer-links { display:flex; flex-wrap:wrap; }
+        @media(pointer:coarse) { summary { min-height:44px; } }
+        @media(max-width:540px) { .details-grid { grid-template-columns:1fr; } }
+        @media(max-width:360px) { .supplier-logo { width:30px; height:30px; } .rank { width:18px; height:18px; } .cost { font-size:16px; } }
         details { margin-top:10px; font-size:12px; }
-        summary { cursor:pointer; color:var(--secondary-text-color,#657981); }
+        summary { cursor:pointer; }
         details p { margin:8px 0; white-space:pre-wrap; }
         a { color:var(--primary-color,#007f99); display:inline-block; margin:4px 16px 0 0; }
         footer { font-size:11px; line-height:1.7; margin-top:14px; }
@@ -217,11 +360,19 @@
       if (offers.length && baseline !== null && baseline >= 0) {
         const maximum = Math.max(baseline, ...offers.map(o => Number(o.candidate_cost)), 0.01) * 1.12;
         const reference = element("div", "reference");
-        reference.append(element("span", "", `${this._format(data.power_kva)} kVA · excluding VAT`));
+        reference.append(element("span", "", `${this._format(data.power_kva)} kVA · Single rate · excluding VAT`));
         reference.append(element("strong", "legend", `Your contract ${this._money(baseline)}`));
         content.append(reference);
+        const common = this._conditions(offers[0]).filter(label => offers.every(offer => this._conditions(offer).includes(label)));
+        if (offers.length > 1 && common.length) content.append(element("div", "common-conditions", `All ${offers.length} offers: ${common.join(" · ")}`));
         const list = element("ol");
-        offers.forEach((offer,index) => list.append(this._row(offer,index,baseline,maximum)));
+        offers.forEach((offer,index) => {
+          const row = this._row(offer,index,baseline,maximum,this._number(data.reference_kwh),this._number(data.reference_days));
+          const details = row.querySelector(".offer-details");
+          details.open = expanded.has(details.dataset.identity);
+          details.querySelector(".original").open = originalExpanded.has(details.dataset.identity);
+          list.append(row);
+        });
         content.append(list);
         if (offers.length < 5) content.append(element("p", "muted", `Only ${offers.length} eligible offers are available.`));
       } else if (!statuses[status]) {

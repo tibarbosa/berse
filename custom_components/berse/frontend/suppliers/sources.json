@@ -1,0 +1,91 @@
+{
+  "retrieved_on": "2026-10-25",
+  "source": "https://simuladorprecos.erse.pt/eletricidade/",
+  "suppliers": {
+    "EDPC": {
+      "name": "EDP Comercial",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/edp.png",
+      "file": "edpc.png"
+    },
+    "END": {
+      "name": "Endesa",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/endesa.png",
+      "file": "end.png"
+    },
+    "TUR": {
+      "name": "Mercado Regulado",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/edp_univ.png",
+      "file": "tur.png"
+    },
+    "REPSOL": {
+      "name": "Repsol",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/repsol.png",
+      "file": "repsol.png"
+    },
+    "LUZBOA": {
+      "name": "LuzBoa",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/rockwatt.png",
+      "file": "luzboa.png"
+    },
+    "EZUENERGIA": {
+      "name": "EZU Energia",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/ezu_energia.png",
+      "file": "ezuenergia.png"
+    },
+    "MEOENERGIA": {
+      "name": "MEO Energia",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/meo.png",
+      "file": "meoenergia.png"
+    },
+    "IBD": {
+      "name": "Iberdrola",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/iberdrola.png",
+      "file": "ibd.png"
+    },
+    "OENEO": {
+      "name": "OENEO ENERGY",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/oeneo.png",
+      "file": "oeneo.png"
+    },
+    "GOLD": {
+      "name": "GoldEnergy",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/goldenergy.png",
+      "file": "gold.png"
+    },
+    "ENIPLENITUDE": {
+      "name": "Plenitude",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/eniplenitude.png",
+      "file": "eniplenitude.png"
+    },
+    "JAFPLUS": {
+      "name": "JAFPLUS",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/jafplus.png",
+      "file": "jafplus.png"
+    },
+    "YESENERGY": {
+      "name": "YES ENERGY",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/enforcesco.png",
+      "file": "yesenergy.png"
+    },
+    "NOSSAENERGIA": {
+      "name": "NOSSA Energia",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/Nossa_Energia.png",
+      "file": "nossaenergia.png"
+    },
+    "PORTULOGOS": {
+      "name": "Portulogos",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/Portulogos.jpg",
+      "file": "portulogos.jpg"
+    },
+    "ZUG POWER": {
+      "name": "Zug Power",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/Zug Power.png",
+      "file": "zug-power.png"
+    },
+    "ALFAENERGIA": {
+      "name": "Alfa Energia",
+      "logo_url": "https://simuladorprecos.erse.pt/content/logos/alfaenergia.png",
+      "file": "alfaenergia.png"
+    }
+  }
+}

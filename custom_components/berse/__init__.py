@@ -42,7 +42,15 @@ async def _async_register_frontend(hass: HomeAssistant) -> None:
     if not domain_data.get("frontend_registered"):
         js_path = Path(__file__).parent / "frontend" / "berse-offers.js"
         await hass.http.async_register_static_paths(
-            [StaticPathConfig("/berse/berse-offers.js", str(js_path), False)]
+            [
+                StaticPathConfig("/berse/berse-offers.js", str(js_path), False),
+                StaticPathConfig("/berse/suppliers", str(js_path.parent / "suppliers"), True),
+                StaticPathConfig(
+                    "/berse/supplier-cache",
+                    str(domain_data["catalog_service"].suppliers.directory),
+                    True,
+                ),
+            ]
         )
         domain_data["frontend_registered"] = True
 

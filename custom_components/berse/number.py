@@ -33,7 +33,7 @@ class PriceNumber(BerseEntity, NumberEntity):
     _attr_mode = NumberMode.BOX
     _attr_native_min_value = 0
     _attr_native_max_value = 10
-    _attr_native_step = 0.000001
+    _attr_native_step = 0.0001
 
     def __init__(self, coordinator: OfferCoordinator, entry: ConfigEntry, key: str) -> None:
         name_key = "energy_price" if key == CONF_ENERGY_PRICE else "standing_charge"

@@ -15,7 +15,7 @@ from importlib import resources
 from .models import Catalog, Offer
 
 _LOGGER = logging.getLogger(__name__)
-PARSER_VERSION = 2
+PARSER_VERSION = 3
 MAX_ZIP_BYTES = 12 * 1024 * 1024
 MAX_ENTRY_BYTES = 12 * 1024 * 1024
 CONDITION_FILE = "CondComerciais.csv"
@@ -90,9 +90,9 @@ def _flag(value: str | None) -> bool | None:
     return None
 
 
-def _name_map() -> dict[str, str]:
+def _name_map(filename: str = "supplier_names.json") -> dict[str, str]:
     try:
-        path = resources.files(__package__).joinpath("supplier_names.json")
+        path = resources.files(__package__).joinpath(filename)
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         _LOGGER.warning("Supplier-name mapping is unavailable; source codes will be shown")
@@ -156,6 +156,7 @@ def parse_catalog(payload: bytes, source_url: str, fetched_at: datetime) -> Cata
         variants.setdefault(identity, []).append(row)
 
     names = _name_map()
+    logos = _name_map("supplier_logos.json")
     offers: list[Offer] = []
     used_identities: set[str] = set()
     for identity, component_rows in variants.items():
@@ -214,8 +215,10 @@ def parse_catalog(payload: bytes, source_url: str, fetched_at: datetime) -> Cata
         service_cost_value = parse_decimal(condition.get("CustoServicos_s/IVA (€/ano)"))
         service_cost = service_cost_value if service_cost_value is not None else Decimal("0")
         indexed_flag = _flag(condition.get("FiltroPrecosIndex_ELE"))
-        indexed = indexed_flag if indexed_flag is not None else bool(
-            condition.get("FiltroPrecosIndex_ELE", "").strip()
+        indexed = (
+            indexed_flag
+            if indexed_flag is not None
+            else bool(condition.get("FiltroPrecosIndex_ELE", "").strip())
         )
         # The ERSE table has no general market field. The source documentation
         # identifies TUR as the regulated reference; other source codes remain free market.
@@ -276,6 +279,21 @@ def parse_catalog(payload: bytes, source_url: str, fetched_at: datetime) -> Cata
                 terms_url=condition.get("LinkFichaPadrao", "").strip() or None,
                 offer_url=condition.get("LinkOfertaCom", "").strip() or None,
                 eligibility=eligibility,
+                general_conditions_url=condition.get("LinkCondicoesGerais", "").strip() or None,
+                supplier_logo_url=logos.get(supplier_code),
+                commercial_details={
+                    key: value
+                    for key in (
+                        "DuracaoContrato",
+                        "TxTFaturacao",
+                        "TxTAtendimento",
+                        "TxTAtualizaPrecos",
+                        "TxToutrosServicoAdic",
+                        "TxTReembolsos",
+                        "DetalheOutrosDesc/benefi",
+                    )
+                    if (value := condition.get(key, "").strip())
+                },
                 mandatory_services_per_year=service_cost,
                 conditional_eligibility=conditional_eligibility,
                 # ERSE leaves the annual cost blank when the explicit service
