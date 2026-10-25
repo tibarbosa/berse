@@ -1,6 +1,8 @@
 /* berse Offers card. Supplier content is always inserted as text. */
 (() => {
   const CARD_TYPE = "berse-offers";
+  const MAX_OFFERS = 15;
+  const DEFAULT_VISIBLE_OFFERS = 3;
 
   const element = (tag, className, text) => {
     const node = document.createElement(tag);
@@ -70,9 +72,11 @@
       super();
       this.attachShadow({ mode: "open" });
       this._config = {};
+      this._visibleOfferCount = DEFAULT_VISIBLE_OFFERS;
     }
     setConfig(config) {
       if (!config.entity) throw new Error("Select a Best offers sensor.");
+      if (config.entity !== this._config.entity) this._visibleOfferCount = DEFAULT_VISIBLE_OFFERS;
       this._config = { ...config };
       this._render();
     }
@@ -87,8 +91,10 @@
         id.startsWith("sensor.") && Array.isArray(hass.states[id].attributes.offers));
       return { entity: entity || "sensor.berse_best_offers" };
     }
-    getCardSize() { return 9; }
-    getGridOptions() { return { columns: 12, rows: 9, min_columns: 6, min_rows: 4 }; }
+    getCardSize() {
+      return Math.ceil((this.shadowRoot.querySelector("ha-card")?.getBoundingClientRect().height || 750) / 50);
+    }
+    getGridOptions() { return { columns: 12, rows: "auto", min_columns: 6 }; }
     _number(value) {
       if (value === null || value === undefined || value === "") return null;
       const result = Number(value);
@@ -271,6 +277,49 @@
       row.append(this._details(offer, kwh, days));
       return row;
     }
+    _offerControls(list, total) {
+      const controls = element("div", "offer-controls");
+      const status = element("span", "muted");
+      status.setAttribute("role", "status");
+      status.setAttribute("aria-live", "polite");
+      const actions = element("div", "offer-control-actions");
+      const label = element("label", "offer-count-label", "Show");
+      const select = element("select", "offer-count");
+      select.setAttribute("aria-label", "Number of offers to show");
+      select.setAttribute("aria-controls", list.id);
+      const choices = [...new Set([3, 6, 9, 12, MAX_OFFERS].map(count => Math.min(count, total)))];
+      for (const count of choices) {
+        const option = element("option", "", `${count} offers`);
+        option.value = String(count);
+        select.append(option);
+      }
+      label.append(select);
+      const toggle = element("button", "offer-expansion");
+      toggle.type = "button";
+      toggle.setAttribute("aria-controls", list.id);
+      actions.append(label, toggle);
+      actions.hidden = total <= DEFAULT_VISIBLE_OFFERS;
+      controls.append(status, actions);
+      const update = () => {
+        const visible = Math.min(this._visibleOfferCount, total);
+        [...list.children].forEach((row, index) => { row.hidden = index >= visible; });
+        status.textContent = `Showing ${visible} of ${total} offers`;
+        select.value = String(visible);
+        toggle.textContent = visible === total ? "Show top 3" : `Show all ${total} offers`;
+        toggle.setAttribute("aria-expanded", String(visible > DEFAULT_VISIBLE_OFFERS));
+      };
+      select.addEventListener("change", () => {
+        const selected = Number(select.value);
+        this._visibleOfferCount = selected === total ? MAX_OFFERS : selected;
+        update();
+      });
+      toggle.addEventListener("click", () => {
+        this._visibleOfferCount = this._visibleOfferCount >= total ? DEFAULT_VISIBLE_OFFERS : MAX_OFFERS;
+        update();
+      });
+      update();
+      return controls;
+    }
     _render() {
       if (!this._hass || !this._config.entity) return;
       const state = this._hass.states[this._config.entity];
@@ -281,6 +330,14 @@
       style.textContent = `
         :host { display:block; color:var(--primary-text-color,#172b35); }
         ha-card { overflow:hidden; }
+        [hidden] { display:none !important; }
+        .offer-controls { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:18px 0 4px; }
+        .offer-control-actions,.offer-count-label { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .offer-count-label { color:var(--secondary-text-color,#657981); font-size:12px; }
+        .offer-controls button { margin-top:0; min-height:40px; font-size:13px; }
+        .offer-count { font:inherit; font-size:13px; min-height:40px; padding:8px 10px; border:1px solid var(--divider-color,#ddd); border-radius:8px; color:var(--primary-text-color,#172b35); background:var(--secondary-background-color,#edf3f5); }
+        @media(pointer:coarse) { .offer-controls button,.offer-count { min-height:44px; } }
+        @media(max-width:420px) { .offer-control-actions { width:100%; justify-content:space-between; } .offer-count { font-size:16px; } }
         .content { padding:24px; }
         h2 { font-size:22px; line-height:1.3; margin:4px 0 8px; letter-spacing:-.4px; }
         .eyebrow { color:var(--secondary-text-color,#657981); font-size:11px; letter-spacing:2px; font-weight:700; text-transform:uppercase; }
@@ -340,7 +397,7 @@
       const card = element("ha-card");
       const content = element("div", "content");
       content.append(element("div", "eyebrow", "berse · electricity comparison"));
-      content.append(element("h2", "", this._config.title || "Your 5 best offers"));
+      content.append(element("h2", "", this._config.title || "Your best offers"));
       const source = data.reference_consumption_source === "manual" ? "Manual estimate" : data.reference_label || "Consumption reference";
       content.append(element("div", "muted", `${source} · ${this._format(data.reference_kwh)} kWh · ${data.reference_days ?? "—"} days`));
       const statuses = {
@@ -355,7 +412,7 @@
       if (data.status === "stale") content.append(element("p", "notice", "Catalog refresh failed. Showing the last successful catalog; prices may be outdated."));
       const offers = (Array.isArray(data.offers) ? data.offers : [])
         .filter(offer => offer && this._number(offer.candidate_cost) !== null && Number(offer.candidate_cost) >= 0)
-        .sort((a,b) => Number(a.candidate_cost) - Number(b.candidate_cost)).slice(0,5);
+        .sort((a,b) => Number(a.candidate_cost) - Number(b.candidate_cost)).slice(0,MAX_OFFERS);
       const baseline = offers.length ? this._number(offers[0].current_cost) : null;
       if (offers.length && baseline !== null && baseline >= 0) {
         const maximum = Math.max(baseline, ...offers.map(o => Number(o.candidate_cost)), 0.01) * 1.12;
@@ -366,6 +423,7 @@
         const common = this._conditions(offers[0]).filter(label => offers.every(offer => this._conditions(offer).includes(label)));
         if (offers.length > 1 && common.length) content.append(element("div", "common-conditions", `All ${offers.length} offers: ${common.join(" · ")}`));
         const list = element("ol");
+        list.id = "berse-offers-list";
         offers.forEach((offer,index) => {
           const row = this._row(offer,index,baseline,maximum,this._number(data.reference_kwh),this._number(data.reference_days));
           const details = row.querySelector(".offer-details");
@@ -373,8 +431,8 @@
           details.querySelector(".original").open = originalExpanded.has(details.dataset.identity);
           list.append(row);
         });
-        content.append(list);
-        if (offers.length < 5) content.append(element("p", "muted", `Only ${offers.length} eligible offers are available.`));
+        content.append(list, this._offerControls(list, offers.length));
+        if (offers.length < MAX_OFFERS) content.append(element("p", "muted", `Only ${offers.length} eligible offers are available.`));
       } else if (!statuses[status]) {
         content.append(element("p", "notice", "No comparable offer costs are available yet."));
       }
@@ -404,6 +462,6 @@
   window.customCards = window.customCards || [];
   if (!window.customCards.some(card => card.type === CARD_TYPE)) window.customCards.push({
     type:CARD_TYPE, name:"berse Offers", preview:true,
-    description:"Compare your five best electricity offers with cost bars and savings.",
+    description:"Compare up to fifteen electricity offers, showing the best three first.",
   });
 })();

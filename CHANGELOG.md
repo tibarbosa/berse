@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0
+
+- Rank and expose up to fifteen eligible offers while initially displaying the best three in the dashboard card.
+- Combine a synchronized offer-count selector with expand-all and collapse-to-three actions in the card footer.
+- Preserve the visible count and open offer details during sensor updates, and adapt controls to shorter result lists.
+- Keep the cost scale fixed across all available offers and let Sections dashboard cards grow with their content.
+- Update the dashboard guide, Markdown fallback and standalone card examples for the fifteen-offer limit.
+
 ## 0.3.0
 
 - Organize offer details into eligibility, contract, billing, price and additional-service sections for every supplier.

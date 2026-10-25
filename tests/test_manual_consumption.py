@@ -1,4 +1,4 @@
-"""Manual consumption and five-offer comparisons without Recorder history."""
+"""Manual consumption and fifteen-offer comparisons without Recorder history."""
 
 import asyncio
 from datetime import UTC, datetime
@@ -32,7 +32,7 @@ def test_sensor_mode_still_requires_valid_sensor():
 
 @pytest.mark.parametrize("kwh", [100, 500])
 @pytest.mark.parametrize("current_price", ["0.01", "0.4"])
-def test_manual_ranking_has_five_offers_without_recorded_consumption(
+def test_manual_ranking_has_fifteen_offers_without_recorded_consumption(
     monkeypatch, kwh, current_price
 ):
     import custom_components.berse.coordinator as module
@@ -56,7 +56,10 @@ def test_manual_ranking_has_five_offers_without_recorded_consumption(
     )
     coordinator.catalog_service = SimpleNamespace(
         catalog=Catalog(
-            offers=[offer(str(i), "0.2", str(Decimal("0.1") + Decimal(i) / 100)) for i in range(8)],
+            offers=[
+                offer(str(i), "0.2", str(Decimal("0.1") + Decimal(i) / 100))
+                for i in range(18)
+            ],
             source_url="https://example.com",
             fetched_at="2026-10-12",
             content_hash="test",
@@ -68,7 +71,7 @@ def test_manual_ranking_has_five_offers_without_recorded_consumption(
     coordinator.entry_storage = SimpleNamespace(data={}, async_save=AsyncMock())
     data = asyncio.run(coordinator._async_build_data(False))
     assert data["ranking_status"] == "ready"
-    assert len(data["offers"]) == 5
+    assert len(data["offers"]) == 15
     assert data["reference_kwh"] == str(kwh)
     assert data["reference_days"] == 30
     assert data["reference_consumption_source"] == "manual"

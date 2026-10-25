@@ -12,7 +12,7 @@ content: |-
   {{ state_attr(entity, 'summary') or 'Waiting for consumption data.' }}
   {% endif %}
 
-  {% for offer in offers[:5] %}
+  {% for offer in offers[:15] %}
   **{{ loop.index }}. {{ offer.supplier_name | e }} — {{ offer.offer_name | e }}**
 
   Estimated cost: {{ '%.2f' | format(offer.candidate_cost | float) }} EUR · Saving: {{ '%.2f' | format(offer.savings | float) }} EUR

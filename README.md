@@ -2,7 +2,7 @@
 
 ![berse logo](custom_components/berse/brand/icon.png)
 
-berse compares the five lowest cost single-rate electricity offers for mainland Portugal in Home Assistant. It supports a cumulative energy sensor or an assumed kWh amount for a billing period.
+berse compares up to fifteen of the lowest cost single-rate electricity offers for mainland Portugal in Home Assistant. It supports a cumulative energy sensor or an assumed kWh amount for a billing period.
 
 All comparison prices exclude VAT. Estimates cover energy and the daily standing charge only.
 
@@ -40,7 +40,9 @@ Market, indexed offer, conditional eligibility, and notification preferences are
 
 ## Dashboard card
 
-In a storage-mode dashboard, select **Edit dashboard → Add card → berse Offers** and choose the **Best offers** sensor. The integration registers the card resource automatically. The card sorts and displays up to five offers, even when none saves money. Its shared cost scale marks your contract with a dashed line: green shows savings, grey shows equal cost, and red shows higher cost. Total costs, savings and consumption use two decimal places; energy prices and daily standing charges use four. Essential conditions appear below each offer. Expand **Offer details** for eligibility, contract duration, billing, precise unit rates, extra services, original ERSE information and supplier documents. Missing important data is marked **Not provided**. Non-indexed prices can still change under the supplier's terms.
+In a storage-mode dashboard, select **Edit dashboard → Add card → berse Offers** and choose the **Best offers** sensor. The integration registers the card resource automatically. The card ranks up to fifteen offers and initially shows the best three, even when none saves money. At the bottom, choose **Show → 3, 6, 9, 12 or 15 offers**, or use **Show all 15 offers** and **Show top 3**. Both controls stay synchronized and adapt when fewer offers are available.
+
+Its shared cost scale marks your contract with a dashed line: green shows savings, grey shows equal cost, and red shows higher cost. Total costs, savings and consumption use two decimal places; energy prices and daily standing charges use four. Essential conditions appear below each offer. Expand **Offer details** for eligibility, contract duration, billing, precise unit rates, extra services, original ERSE information and supplier documents. Missing important data is marked **Not provided**. Non-indexed prices can still change under the supplier's terms.
 
 Supplier names and logos update automatically from ERSE using a fictional profile; your consumption and contract prices are not submitted. Logos are cached and served locally by Home Assistant, with bundled logos and supplier initials as fallbacks. Discovery runs daily and cached images are checked weekly; new suppliers use initials until ERSE provides a matching logo. Disable **Show supplier logos** in the card editor, or set `show_supplier_logos: false` in YAML.
 
@@ -49,7 +51,7 @@ For a YAML-managed dashboard, add this resource:
 ```yaml
 lovelace:
   resources:
-    - url: /berse/berse-offers.js?v=0.3.0
+    - url: /berse/berse-offers.js?v=0.4.0
       type: module
 ```
 

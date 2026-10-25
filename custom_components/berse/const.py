@@ -4,7 +4,7 @@ from datetime import timedelta
 
 DOMAIN = "berse"
 NAME = "berse"
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 MANUFACTURER = "berse"
 
 CONF_CONSUMPTION_MODE = "consumption_mode"
@@ -34,7 +34,7 @@ DEFAULT_UPDATE_TIME = "03:15:00"
 DEFAULT_BILLING_DAYS = 30
 DEFAULT_POWER = "4.6"
 UPDATE_INTERVAL = timedelta(minutes=5)
-MAX_OFFERS = 5
+MAX_OFFERS = 15
 
 PLATFORMS = ["sensor", "number", "select", "date", "time", "button"]
 

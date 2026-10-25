@@ -17,14 +17,19 @@
 <main>
 <h1>berse · Card preview</h1>
 <p>Fictional demonstration data. Actual offers come from ERSE in Home Assistant.</p>
-<div class="cards"><section><h2>Mixed savings</h2><berse-offers id="mixed"></berse-offers></section><section><h2>No cheaper offers</h2><berse-offers id="higher"></berse-offers></section></div>
+<div class="cards"><section><h2>Mixed savings</h2><berse-offers id="mixed"></berse-offers></section><section><h2>No cheaper offers</h2><berse-offers id="higher"></berse-offers></section><section><h2>Fewer available offers</h2><berse-offers id="fewer"></berse-offers></section></div>
 </main>
 <script src="../custom_components/berse/frontend/berse-offers.js"></script>
 <script>
 const offers = [
   ['Supplier A','Simple energy',48],['Supplier B','Home plan',54],
   ['Supplier C','Standard plan',60],['Supplier D','Electricity plus',66],
-  ['Supplier E','Flexible plan',72],
+  ['Supplier E','Flexible plan',72],['Supplier F','Example plan F',74],
+  ['Supplier G','Example plan G',76],['Supplier H','Example plan H',78],
+  ['Supplier I','Example plan I',80],['Supplier J','Example plan J',82],
+  ['Supplier K','Example plan K',84],['Supplier L','Example plan L',86],
+  ['Supplier M','Example plan M',88],['Supplier N','Example plan N',90],
+  ['Supplier O','Example plan O',92],
 ].map(([supplier_name,offer_name,candidate_cost],i) => ({
   supplier_name,offer_name,candidate_cost,offer_id:`DEMO-${i+1}`,
   standing_charge:0.4,energy_price:(candidate_cost-12)/300,
@@ -38,13 +43,13 @@ const offers = [
     TxTAtualizaPrecos:'Prices can change under the contract revision terms.'} : {},
   valid_from:'2026-10-01',valid_until:'2026-10-31',market:'free',indexed:false,
 }));
-for (const [id,current_cost] of [['mixed',60],['higher',42]]) {
+for (const [id,current_cost,total] of [['mixed',60,15],['higher',42,15],['fewer',60,5]]) {
  const card=document.getElementById(id);
  card.setConfig({entity:'sensor.demo_best_offers'});
  card.hass={config:{time_zone:'Europe/Lisbon'},states:{'sensor.demo_best_offers':{
-  state:'5',attributes:{ranking_status:'ready',status:'ready',reference_kwh:300,
+  state:String(total),attributes:{ranking_status:'ready',status:'ready',reference_kwh:300,
    reference_days:30,reference_consumption_source:'manual',power_kva:4.6,
-   last_successful_update:'2026-10-12T12:00:00Z',offers:offers.map(o=>({...o,current_cost,savings:current_cost-o.candidate_cost})),
+   last_successful_update:'2026-10-12T12:00:00Z',offers:offers.slice(0,total).map(o=>({...o,current_cost,savings:current_cost-o.candidate_cost})),
   },
  }}};
 }
